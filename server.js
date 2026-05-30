@@ -12,7 +12,7 @@ const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: 'thesalonbarberagenda@gmail.com', // TU CORREO
-        pass: 'tgwtzbsdjgqkmvoxz' // "Contraseña de Aplicación" de Google, no tu contraseña normal
+        pass: 'dubfaxadvrovhvgw' // "Contraseña de Aplicación" de Google, no tu contraseña normal
     }
 });
 
