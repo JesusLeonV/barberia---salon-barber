@@ -12,7 +12,7 @@ const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: 'thesalonbarberagenda@gmail.com', // TU CORREO
-        pass: 'tgwtz bsdj gqkm voxz' // OJO: Usa una "Contraseña de Aplicación" de Google, no tu contraseña normal
+        pass: 'tgwtzbsdjgqkmvoxz' // "Contraseña de Aplicación" de Google, no tu contraseña normal
     }
 });
 
@@ -198,10 +198,32 @@ app.post('/api/citas', async (req, res) => {
             `
         };
 
-        // Ejecutar los envíos en segundo plano
-        transporter.sendMail(mailCliente, (err) => { if(err) console.error("Error mail cliente:", err); });
-        transporter.sendMail(mailBarbero, (err) => { if(err) console.error("Error mail barbero:", err); });
+        // Ejecutar los envíos de manera segura para que fallos individuales no rompan la respuesta
+        try {
+            transporter.sendMail(mailCliente, (err, info) => { 
+                if(err) {
+                    console.error("❌ ERROR EN MAIL CLIENTE:", err.message);
+                } else {
+                    console.log("✅ Mail cliente enviado con éxito:", info.response);
+                }
+            });
+        } catch (mailErr) {
+            console.error("❌ Fallo crítico disparando mailCliente:", mailErr);
+        }
 
+        try {
+            transporter.sendMail(mailBarbero, (err, info) => { 
+                if(err) {
+                    console.error("❌ ERROR EN MAIL BARBERO:", err.message);
+                } else {
+                    console.log("✅ Mail barbero enviado con éxito:", info.response);
+                }
+            });
+        } catch (mailErr) {
+            console.error("❌ Fallo crítico disparando mailBarbero:", mailErr);
+        }
+
+        // Enviamos la respuesta 201 al cliente inmediatamente
         res.status(201).json({ success: true });
     } catch (error) { 
         console.error("Error al agendar o enviar correo:", error);
