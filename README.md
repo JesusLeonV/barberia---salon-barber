@@ -15,5 +15,4 @@ Sistema web moderno y responsivo para la gestión de reservas de servicios de ba
 * **JavaScript (Vanilla):** Lógica para el manejo de estados en el calendario, colapsables de servicios y navegación dinámica.
 
 ## ✒️ Desarrollador
-* **Jesus armando leon vasques** 
-* **estudiante de informatica** 
+* **Jesus Armando Leon Vasquez** - *Estudiante Ingenieria Informatica* - [GitHub](https://github.com/JesusLeonV)
