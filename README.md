@@ -1,4 +1,4 @@
-# The Salon Barber 💈
+# Barberia 💈
 
 Sistema web moderno y responsivo para la gestión de reservas de servicios de barbería en tiempo real, diseñado con un enfoque oscuro, elegante e intuitivo para el usuario.
 
@@ -15,5 +15,5 @@ Sistema web moderno y responsivo para la gestión de reservas de servicios de ba
 * **JavaScript (Vanilla):** Lógica para el manejo de estados en el calendario, colapsables de servicios y navegación dinámica.
 
 ## ✒️ Desarrollador
-Jesus armando leon vasques 
-estudiante de informatica 
+* **Jesus armando leon vasques** 
+* **estudiante de informatica** 
