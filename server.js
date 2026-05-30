@@ -11,8 +11,8 @@ const JWT_SECRET = "TheSalonBarber_Iquique_2026_SecretKey";
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: 'tucorreo@gmail.com', // TU CORREO
-        pass: 'tu_contraseña_de_aplicacion' // OJO: Usa una "Contraseña de Aplicación" de Google, no tu contraseña normal
+        user: 'thesalonbarberagenda@gmail.com', // TU CORREO
+        pass: 'tgwtz bsdj gqkm voxz' // OJO: Usa una "Contraseña de Aplicación" de Google, no tu contraseña normal
     }
 });
 
@@ -161,7 +161,7 @@ app.post('/api/citas', async (req, res) => {
 
         // 3. ENVIAR CORREO AL CLIENTE (Confirmación)
         const mailCliente = {
-            from: '"The Salon Barber" <tucorreo@gmail.com>', // Usa la misma cuenta autenticada
+            from: '"The Salon Barber" <thesalonbarberagenda@gmail.com>', // Usa la misma cuenta autenticada
             to: cliente_correo,
             subject: '¡Tu cita ha sido confirmada! 💈',
             html: `<h2>Hola ${cliente_nombre}</h2>
@@ -172,7 +172,7 @@ app.post('/api/citas', async (req, res) => {
 
         // 4. ENVIAR CORREO AL BARBERO (Notificación con botón de contacto inmediato)
         const mailBarbero = {
-            from: '"The Salon Barber Sistema" <tucorreo@gmail.com>',
+            from: '"The Salon Barber Sistema" <thesalonbarberagenda@gmail.com>',
             to: barbero.email,
             subject: `Nueva cita agendada - ${cliente_nombre} (${hora} Hrs)`,
             html: `
