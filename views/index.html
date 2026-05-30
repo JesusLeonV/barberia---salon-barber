@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Salon Barber - Agenda</title>
+    <link rel="stylesheet" href="/css/styles.css?v=2">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <span class="nav-brand"><strong>The Salon Barber</strong> <span class="nav-branch">@the_salonbarber</span></span>
+            <div id="nav-user-section">
+                <button id="btn-abrir-login" class="nav-login" style="background:transparent; border:none; color:var(--text-secondary); font-weight:bold; cursor:pointer;">Iniciar sesión <i class="fa-solid fa-user"></i></button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-wrapper">
+        <section class="hero-grid">
+            <div class="hero-left-col">
+                <div class="main-banner">
+                    <img src="/images/barberia.png" alt="Interior @the_salonbarber" class="img-fluid" onerror="this.style.display='none'">
+                </div>
+                <div class="barber-meta-profile">
+                    <div class="profile-header">
+                        <div class="logo-box">
+                            <img src="/images/logobarber.png" alt="Logo" onerror="this.style.display='none'">
+                        </div>
+                        <div class="title-box">
+                            <h2>The Salon Barber</h2>
+                            <div class="stars-row">💡 <span class="rating-text">"Nosotros el corte y tú el estilo"</span></div>
+                        </div>
+                    </div>
+                    <p class="business-description">Bienvenidos a @the_salonbarber. Ofrecemos el mejor ambiente urbano de Iquique enfocado en el cuidado de tu imagen. Especialistas en cortes modernos, clásicos, perfilado de cejas y cuidado completo de barba con las mejores herramientas y profesionales de la región.</p>
+                </div>
+            </div>
+            <div class="hero-right-col">
+                <div class="interactive-location-card">
+                    <div class="embedded-map">
+                        <iframe src="https://maps.google.com/maps?q=Av.%20la%20Tirana%203432,%20Iquique&t=&z=15&ie=UTF8&iwloc=&output=embed" width="100%" height="220" style="border:0; border-radius: 8px;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    </div>
+                    <div class="contact-details-list" style="margin-top: 15px;">
+                        <p class="info-item"><i class="fa-solid fa-location-dot"></i> Av. la Tirana 3432, 1113745 Iquique, Tarapacá</p>
+                        <p class="info-item"><i class="fa-regular fa-clock"></i> Lun a Sáb: 10:30 - 22:00 | Dom: 13:00 - 21:00</p>
+                    </div>
+                </div>
+                <div class="team-widget" style="margin-top: 25px; padding: 15px; background: var(--bg-surface); border-radius: 12px; border: 1px solid var(--border-subtle);">
+                    <h3 style="font-size: 16px; margin-bottom: 15px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;">Nuestro Equipo</h3>
+                    <div class="team-avatars" id="widget-barberos-fijos" style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: flex-start;"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="booking-layout">
+            <div class="booking-sidebar">
+                <div class="interactive-search">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" placeholder="¿Qué servicio buscas?" id="input-buscador">
+                </div>
+                <ul class="nav-categories" id="lista-categorias-filtro">
+                    <li class="active">Todos los Servicios</li>
+                </ul>
+            </div>
+
+            <div class="booking-main-panel">
+                <div id="paso-servicios">
+                    <h3 style="font-size:16px; margin-bottom:15px; color:var(--accent-gold);">1. SELECCIONA UN SERVICIO:</h3>
+                    <div id="contenedor-categorias"></div>
+                </div>
+                <div id="paso-barbero" class="hidden animate-step" style="margin-top: 30px;">
+                    <h3 style="font-size:16px; margin-bottom:15px; color:var(--accent-gold);">2. SELECCIONA TU PROFESIONAL:</h3>
+                    <div id="contenedor-barberos" style="display:flex; gap:15px; flex-wrap: wrap;"></div>
+                </div>
+                <div id="paso-horario" class="hidden animate-step" style="margin-top: 30px;">
+                    <h3 style="font-size:16px; margin-bottom:15px; color:var(--accent-gold);">3. ELIGE DÍA Y HORA DE ATENCIÓN:</h3>
+                    
+                    <div style="display:flex; gap:25px; align-items:flex-start; flex-wrap:wrap;">
+                        
+                        <div style="flex:1; min-width:320px; background:var(--bg-surface); padding:20px; border-radius:12px; border:1px solid var(--border-subtle);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                                <button onclick="cambiarMesIndex(-1)" style="background:transparent; border:none; color:var(--accent-gold); font-size:20px; cursor:pointer;">◀</button>
+                                <h3 id="mes-titulo" style="color:var(--accent-gold); margin:0; text-transform:capitalize; font-size:18px;">Mes</h3>
+                                <button onclick="cambiarMesIndex(1)" style="background:transparent; border:none; color:var(--accent-gold); font-size:20px; cursor:pointer;">▶</button>
+                            </div>
+
+                            <div id="grid-calendario" style="display:grid; grid-template-columns:repeat(7, 1fr); gap:8px; text-align:center; color:white; font-size:14px;">
+                                </div>
+                        </div>
+                        
+                        <div style="flex:1; min-width:250px;">
+                            <h4 style="color:white; margin-bottom:15px;">Horarios Disponibles</h4>
+                            <div id="contenedor-horas" class="time-grid">
+                                <p style="color:#999;">Selecciona una fecha en el calendario...</p>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+                <div id="paso-cliente" class="hidden animate-step" style="margin-top: 30px;">
+                    <h3 style="font-size:16px; margin-bottom:15px; color:var(--accent-gold);">4. COMPLETA TUS DATOS PARA RESERVAR:</h3>
+                    <div class="form-group" style="display: flex; flex-direction: column; gap: 12px; max-width: 400px;">
+                        <input type="text" id="cliente-nombre" class="input-glow" placeholder="Nombre completo" required style="padding: 12px;">
+                        <input type="tel" id="cliente-telefono" class="input-glow" placeholder="Número de WhatsApp (Ej: +569...)" required style="padding: 12px;">
+                        <input type="email" id="cliente-correo" class="input-glow" placeholder="Correo electrónico" required style="padding: 12px;">
+                        <button id="btn-finalizar" class="btn-submit" style="margin-top: 15px;">Confirmar Cita 💈</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div id="modal-auth" class="modal-overlay hidden">
+        <div class="modal-content">
+            <span class="close-modal" id="btn-cerrar-modal">×</span>
+            <div class="auth-tabs">
+                <button class="auth-tab active" id="tab-login">Ingresar</button>
+                <button class="auth-tab" id="tab-registro">Crear Cuenta</button>
+            </div>
+            <form id="form-login" class="auth-form">
+                <input type="email" id="login-email" class="input-glow" placeholder="Correo electrónico" required>
+                <input type="password" id="login-password" class="input-glow" placeholder="Contraseña" required>
+                <button type="submit" class="btn-submit">Entrar</button>
+            </form>
+            <form id="form-registro" class="auth-form hidden">
+                <input type="text" id="reg-nombre" class="input-glow" placeholder="Nombre completo" required>
+                <input type="tel" id="reg-telefono" class="input-glow" placeholder="WhatsApp (+569...)" required>
+                <input type="email" id="reg-email" class="input-glow" placeholder="Correo electrónico" required>
+                <input type="password" id="reg-password" class="input-glow" placeholder="Contraseña" required>
+                <button type="submit" class="btn-submit">Registrarme</button>
+            </form>
+            <div id="auth-msg" style="text-align:center; margin-top:15px; font-size:13px;"></div>
+        </div>
+    </div>
+    
+    <script>
+        const reservaActual = { servicio_id: null, barbero_id: null, fecha: null, hora: null };
+        let fechaActual = new Date();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            verificarSesion();
+            cargarEquipo();
+            cargarServicios();
+            configurarModal();
+            configurarTabs();
+            configurarFormularios();
+            configurarBuscador();
+            configurarBotonFinalizar();
+        });
+
+        function configurarModal() {
+            const modalAuth = document.getElementById('modal-auth');
+            document.body.addEventListener('click', (e) => {
+                if (e.target.id === 'btn-abrir-login' || e.target.closest('#btn-abrir-login')) {
+                    modalAuth.classList.remove('hidden');
+                }
+                if (e.target.id === 'btn-cerrar-modal') {
+                    modalAuth.classList.add('hidden');
+                }
+            });
+        }
+
+        function configurarTabs() {
+            const tabLogin = document.getElementById('tab-login');
+            const tabRegistro = document.getElementById('tab-registro');
+            const formLogin = document.getElementById('form-login');
+            const formRegistro = document.getElementById('form-registro');
+            if (!tabLogin || !tabRegistro || !formLogin || !formRegistro) return;
+            tabLogin.addEventListener('click', () => {
+                tabLogin.classList.add('active');
+                tabRegistro.classList.remove('active');
+                formLogin.classList.remove('hidden');
+                formRegistro.classList.add('hidden');
+            });
+            tabRegistro.addEventListener('click', () => {
+                tabRegistro.classList.add('active');
+                tabLogin.classList.remove('active');
+                formRegistro.classList.remove('hidden');
+                formLogin.classList.add('hidden');
+            });
+        }
+
+        function configurarFormularios() {
+            const formLogin = document.getElementById('form-login');
+            const formRegistro = document.getElementById('form-registro');
+            if (formLogin) formLogin.addEventListener('submit', async (e) => { e.preventDefault(); await enviarLogin(); });
+            if (formRegistro) formRegistro.addEventListener('submit', async (e) => { e.preventDefault(); await enviarRegistro(); });
+        }
+
+        function configurarBuscador() {
+            const buscador = document.getElementById('input-buscador');
+            if (!buscador) return;
+            buscador.addEventListener('input', (e) => {
+                const textoBusqueda = e.target.value.toLowerCase().trim();
+                const categories = document.querySelectorAll('.accordion-item');
+                categories.forEach(item => {
+                    const tarjetas = item.querySelectorAll('.service-card');
+                    let hayCoincidencias = false;
+                    tarjetas.forEach(tarjeta => {
+                        const nombreServicio = tarjeta.querySelector('h4')?.textContent.toLowerCase() || '';
+                        const descripcionServicio = tarjeta.querySelector('.service-desc')?.textContent.toLowerCase() || '';
+                        if (nombreServicio.includes(textoBusqueda) || descripcionServicio.includes(textoBusqueda)) {
+                            tarjeta.style.display = 'flex';
+                            hayCoincidencias = true;
+                        } else {
+                            tarjeta.style.display = 'none';
+                        }
+                    });
+                    const header = item.querySelector('.accordion-header');
+                    const content = item.querySelector('.accordion-content');
+                    if (textoBusqueda === '') {
+                        item.style.display = 'block';
+                        tarjetas.forEach(t => t.style.display = 'flex');
+                        header?.classList.remove('active');
+                        if (content) content.style.maxHeight = null;
+                        const icon = header?.querySelector('.icon i');
+                        if (icon) icon.className = 'fa-solid fa-plus';
+                    } else if (hayCoincidencias) {
+                        item.style.display = 'block';
+                        header?.classList.add('active');
+                        if (content) content.style.maxHeight = content.scrollHeight + 'px';
+                        const icon = header?.querySelector('.icon i');
+                        if (icon) icon.className = 'fa-solid fa-minus';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        function configurarBotonFinalizar() {
+            const btnFinalizar = document.getElementById('btn-finalizar');
+            if (!btnFinalizar) return;
+
+            btnFinalizar.addEventListener('click', async () => {
+                const nombre = document.getElementById('cliente-nombre').value.trim();
+                const telefono = document.getElementById('cliente-telefono').value.trim();
+                const correo = document.getElementById('cliente-correo').value.trim();
+
+                // Validación profesional
+                if (!nombre || !telefono || !correo || !reservaActual.servicio_id || !reservaActual.barbero_id || !reservaActual.fecha || !reservaActual.hora) {
+                    return alert('Por favor completa todos tus datos y selecciona servicio, barbero, fecha y hora.');
+                }
+
+                const textoOriginal = btnFinalizar.innerHTML;
+                btnFinalizar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
+                btnFinalizar.disabled = true;
+
+                try {
+                    const res = await fetch('/api/citas', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            barbero_id: reservaActual.barbero_id,
+                            servicio_id: reservaActual.servicio_id,
+                            fecha: reservaActual.fecha,
+                            hora: reservaActual.hora,
+                            cliente_nombre: nombre,
+                            cliente_telefono: telefono,
+                            cliente_correo: correo
+                        })
+                    });
+
+                    const data = await res.json();
+
+                    if (data.success) {
+                        const panel = document.getElementById('paso-cliente');
+                        // AHORA USAMOS BACKTICKS (``) PARA QUE LAS VARIABLES SEAN LEGIBLES
+                        panel.innerHTML = `
+                            <div class="animate-step" style="text-align: center; padding: 40px; border: 2px solid var(--accent-gold); border-radius: 15px; background: #1a1a1a; margin-top: 20px; box-shadow: 0 10px 30px rgba(234, 179, 8, 0.1);">
+                                <i class="fa-solid fa-circle-check" style="font-size: 60px; color: #28a745; margin-bottom: 20px;"></i>
+                                <h2 style="color: white; margin-bottom: 10px;">¡Reserva Confirmada!</h2>
+                                <p style="color: #ccc; margin-bottom: 5px;">Tu cita está lista. Notificamos a tu barbero.</p>
+                                <p style="color: var(--accent-gold); font-size: 1.2em; font-weight: bold; margin: 15px 0;">
+                                    ${reservaActual.fecha} - ${reservaActual.hora}
+                                </p>
+                                <button onclick="window.location.reload()" class="btn-submit" style="margin-top: 20px; padding: 12px 30px; font-weight: bold; cursor:pointer;">
+                                    NUEVA RESERVA
+                                </button>
+                            </div>`;
+                    } else {
+                        throw new Error(data.error || 'Datos inválidos');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('Error al reservar: ' + err.message);
+                    btnFinalizar.innerHTML = textoOriginal;
+                    btnFinalizar.disabled = false;
+                }
+            });
+        }
+
+        async function enviarLogin() {
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+            const msg = document.getElementById('auth-msg');
+            if (!email || !password) { msg.innerText = 'Completa todos los campos'; msg.style.color = '#ef4444'; return; }
+            try {
+                const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
+                const data = await res.json();
+                if (data.success) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('usuario', JSON.stringify(data.usuario));
+                    verificarSesion();
+                    document.getElementById('modal-auth').classList.add('hidden');
+                    if (data.usuario.rol === 'barbero') window.location.href = '/admin.html';
+                    else window.location.reload();
+                } else {
+                    msg.style.color = '#ef4444';
+                    msg.innerText = data.error || 'Usuario o contraseña incorrectos';
+                }
+            } catch (err) {
+                console.error('Error de login:', err);
+                msg.style.color = '#ef4444';
+                msg.innerText = 'Error de conexión con el servidor.';
+            }
+        }
+
+        async function enviarRegistro() {
+            const nombre = document.getElementById('reg-nombre').value.trim();
+            const telefono = document.getElementById('reg-telefono').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const password = document.getElementById('reg-password').value.trim();
+            const msg = document.getElementById('auth-msg');
+            const btn = document.querySelector('#form-registro button');
+            if (!nombre || !telefono || !email || !password) { msg.style.color = '#ef4444'; msg.innerText = 'Completa todos los campos.'; return; }
+            const textoOriginal = btn?.innerHTML || 'Registrarme';
+            if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registrando...'; btn.disabled = true; }
+            try {
+                const res = await fetch('/api/registro', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nombre, telefono, email, password }) });
+                const data = await res.json();
+                if (data.success) {
+                    msg.style.color = '#28a745';
+                    msg.innerText = data.message || 'Registro exitoso. Inicia sesión.';
+                    document.getElementById('form-registro').reset();
+                    setTimeout(() => {
+                        document.getElementById('tab-login').click();
+                        document.getElementById('login-email').value = email;
+                        msg.innerText = '';
+                    }, 1500);
+                } else {
+                    msg.style.color = '#ef4444';
+                    msg.innerText = data.error || 'No se pudo crear el usuario.';
+                }
+            } catch (err) {
+                console.error('Error de registro:', err);
+                msg.style.color = '#ef4444';
+                msg.innerText = 'Error de conexión.';
+            } finally {
+                if (btn) { btn.innerHTML = textoOriginal; btn.disabled = false; }
+            }
+        }
+
+        function verificarSesion() {
+            const usuarioStr = localStorage.getItem('usuario');
+            const userSection = document.getElementById('nav-user-section');
+            if (!usuarioStr || !userSection) return;
+            
+            const usuario = JSON.parse(usuarioStr);
+            const nombreCorto = usuario.nombre.split(' ')[0];
+            
+            // CORRECCIÓN: Se eliminaron las \ antes del $
+            userSection.innerHTML = `<span style="color: var(--accent-gold); font-size: 13.5px; font-weight: bold; margin-right: 15px;">Hola, ${nombreCorto}</span>${usuario.rol === 'barbero' ? '<a href="/admin.html" style="color: var(--text-secondary); text-decoration: none; margin-right: 15px; font-size: 13px; font-weight: bold;"><i class="fa-solid fa-gear"></i> Panel</a>' : ''}<button onclick="cerrarSesion()" style="background:transparent; border:none; color:#ef4444; font-weight:bold; cursor:pointer; font-size: 13.5px;">Salir <i class="fa-solid fa-right-from-bracket"></i></button>`;
+            
+            const inputNombre = document.getElementById('cliente-nombre');
+            if (inputNombre) inputNombre.value = usuario.nombre;
+        }
+
+        function cerrarSesion() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('usuario');
+            window.location.reload();
+        }
+        //EQUIPOS
+        async function cargarEquipo() {
+            try {
+                const res = await fetch('/api/barberos');
+                const barberos = await res.json();
+                const container = document.getElementById('widget-barberos-fijos');
+                if (!container) return;
+
+                container.style.display = 'flex';
+                container.style.flexDirection = 'column';
+                container.innerHTML = '';
+
+                barberos.forEach(b => {
+                    // 1. Fila principal
+                    const div = document.createElement('div');
+                    div.className = 'barber-row'; 
+                    div.onclick = function() { toggleDetalle(this); };
+
+                    div.innerHTML = `
+                        <img src="${b.foto_url || 'https://via.placeholder.com/40'}" alt="${b.nombre}">
+                        <div class="barber-info-simple" style="display: flex; flex-direction: column; justify-content: center; gap: 2px;">
+                            <span class="barber-name" style="line-height: 1.2;">${b.nombre}</span>
+                            <span class="view-profile" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px;">Ver perfil</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down icon-arrow" style="font-size: 10px; opacity: 0.5; transition: transform 0.3s; margin-left: auto;"></i>
+                    `;
+                    
+                    // 2. Detalle oculto (con validación de enlaces)
+                    const detalle = document.createElement('div');
+                    detalle.className = 'detalle-oculto';
+                    detalle.style.display = 'none';
+                    detalle.style.padding = '10px';
+                    detalle.innerHTML = `
+                        <p style="font-size: 12px; color: #aaa; margin-bottom: 10px;">${b.bio || 'Barbero profesional'}</p>
+                        <div style="display: flex; gap: 15px;">
+                            ${b.instagram ? `<a href="${b.instagram}" target="_blank" style="color: var(--accent-gold); font-size: 12px; text-decoration: none;"><i class="fa-brands fa-instagram"></i> Instagram</a>` : ''}
+                            ${b.whatsapp ? `<a href="https://wa.me/${b.whatsapp}" target="_blank" style="color: #25d366; font-size: 12px; text-decoration: none;"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>` : ''}
+                        </div>
+                    `;
+
+                    container.appendChild(div);
+                    container.appendChild(detalle);
+                });
+            } catch (err) { console.error('Error cargando equipo:', err); }
+        }
+
+        // Función Acordeón Inteligente
+        function toggleDetalle(element) {
+            const detalleActual = element.nextElementSibling;
+            const iconoActual = element.querySelector('.icon-arrow');
+            const estaAbierto = detalleActual.style.display === 'block';
+
+            // Cerrar TODOS los demás detalles abiertos (Efecto Acordeón)
+            document.querySelectorAll('.detalle-oculto').forEach(det => det.style.display = 'none');
+            document.querySelectorAll('.icon-arrow').forEach(ic => ic.style.transform = 'rotate(0deg)');
+
+            // Abrir/Cerrar el seleccionado
+            if (!estaAbierto) {
+                detalleActual.style.display = 'block';
+                if (iconoActual) iconoActual.style.transform = 'rotate(180deg)';
+            }
+        }
+
+        async function cargarServicios() {
+            try {
+                const res = await fetch('/api/servicios');
+                const servicios = await res.json();
+                const contenedor = document.getElementById('contenedor-categorias');
+                const menuLateral = document.getElementById('lista-categorias-filtro');
+                if (!contenedor || !menuLateral) return;
+
+                const categories = {};
+                servicios.forEach(s => {
+                    const catNombre = s.categoria || 'Otros';
+                    if (!categories[catNombre]) categories[catNombre] = [];
+                    categories[catNombre].push(s);
+                });
+
+                contenedor.innerHTML = '';
+                menuLateral.innerHTML = '<li class="active" onclick="filtrarPorMenu(\'Todas\', this)">Todos los Servicios</li>';
+
+                Object.keys(categories).forEach(cat => {
+                    menuLateral.innerHTML += `<li onclick="filtrarPorMenu('${cat}', this)">${cat}</li>`;
+
+                    const tarjetasHTML = categories[cat].map(s => {
+                        const precio = Number(s.precio).toLocaleString('es-CL');
+                        const duracion = s.duracion_minutos || '';
+                        const desc = s.descripcion || '';
+                        return '<div class="service-card" id="servicio-' + s.id + '" style="display:flex; justify-content:space-between; align-items:center; padding:15px; border:1px solid var(--border-subtle); border-radius:8px;">' +
+                            '<div>' +
+                                '<h4 style="margin:0 0 5px 0; font-size:15px;">' + s.nombre + '</h4>' +
+                                '<div class="service-meta" style="font-size:12px; color:#666;"><i class="fa-regular fa-clock"></i> ' + duracion + ' min</div>' +
+                                '<p class="service-desc" style="font-size:13px; margin:5px 0;">' + desc + '</p>' +
+                            '</div>' +
+                            '<div style="text-align:right;">' +
+                                '<div class="service-price" style="font-weight:bold; color:var(--accent-gold); margin-bottom:10px;">$' + precio + '</div>' +
+                                '<button class="btn-book" onclick="seleccionarServicio(' + s.id + ')" style="padding:8px 15px; background:black; color:white; border:none; border-radius:5px; cursor:pointer;">Agendar</button>' +
+                            '</div>' +
+                        '</div>';
+                    }).join('');
+
+                    const item = document.createElement('div');
+                    item.className = 'accordion-item';
+                    item.dataset.categoria = cat;
+                    item.innerHTML =
+                        '<button class="accordion-header">' +
+                            '<span>' + cat + '</span>' +
+                            '<span class="icon"><i class="fa-solid fa-plus"></i></span>' +
+                        '</button>' +
+                        '<div class="accordion-content">' +
+                            '<div class="services-grid" style="display:flex; flex-direction:column; gap:10px; padding:15px 0;">' +
+                                tarjetasHTML +
+                            '</div>' +
+                        '</div>';
+
+                    contenedor.appendChild(item);
+                });
+
+                document.querySelectorAll('.accordion-header').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const content = btn.nextElementSibling;
+                        btn.classList.toggle('active');
+                        if (content) content.style.maxHeight = btn.classList.contains('active') ? content.scrollHeight + 'px' : null;
+                        const icon = btn.querySelector('.icon i');
+                        if (icon) icon.className = btn.classList.contains('active') ? 'fa-solid fa-minus' : 'fa-solid fa-plus';
+                    });
+                });
+
+            } catch (err) {
+                console.error('Error cargando servicios:', err);
+            }
+        }
+
+        function filtrarPorMenu(categoriaSeleccionada, elementoClic) {
+            document.querySelectorAll('#lista-categorias-filtro li').forEach(li => li.classList.remove('active'));
+            if (elementoClic) elementoClic.classList.add('active');
+            document.querySelectorAll('.accordion-item').forEach(item => {
+                if (categoriaSeleccionada === 'Todas' || item.dataset.categoria === categoriaSeleccionada) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        async function seleccionarServicio(id) {
+            reservaActual.servicio_id = id;
+            document.querySelectorAll('.service-card').forEach(el => el.style.borderColor = 'var(--border-subtle)');
+            const servicioEl = document.getElementById('servicio-' + id);
+            if (servicioEl) servicioEl.style.borderColor = 'var(--accent-gold)';
+
+            const pasoBarbero = document.getElementById('paso-barbero');
+            if (pasoBarbero) pasoBarbero.classList.remove('hidden');
+
+            try {
+                const res = await fetch('/api/barberos');
+                const barberos = await res.json();
+                const contenedor = document.getElementById('contenedor-barberos');
+                if (!contenedor) return;
+
+                contenedor.innerHTML = barberos.map(b => {
+                    const foto = b.foto_url || 'https://cdn-icons-png.flaticon.com/512/147/147144.png';
+                    const nombre = b.nombre.split(' ')[0];
+                    return '<div class="barber-card" id="barber-' + b.id + '" onclick="seleccionarBarbero(' + b.id + ')" style="min-width:130px; text-align:center; padding:15px; background:var(--bg-surface); border-radius:12px; border:1px solid var(--border-subtle); cursor:pointer;">' +
+                        '<img src="' + foto + '" onerror="this.src=\'https://cdn-icons-png.flaticon.com/512/147/147144.png\'" alt="' + b.nombre + '" style="width:60px; height:60px; border-radius:50%; object-fit:cover; margin-bottom:8px;">' +
+                        '<h4 style="font-size:13px; color:var(--text-primary); font-weight:600; margin:0;">' + b.nombre + '</h4>' +
+                        '<span style="font-size:11px; color:var(--accent-gold); display:block; margin-top:4px;">Seleccionar</span>' +
+                    '</div>';
+                }).join('');
+
+                pasoBarbero?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } catch (err) {
+                console.error('Error cargando barberos:', err);
+            }
+        }
+        //////////////////////////////////////
+        // BARBERO
+        function seleccionarBarbero(id) { 
+            reservaActual.barbero_id = id; 
+            
+            // UI: Resaltar seleccionado
+            document.querySelectorAll('.barber-card').forEach(el => el.style.borderColor = 'var(--border-subtle)'); 
+            const card = document.getElementById(`barber-${id}`); 
+            if (card) card.style.borderColor = 'var(--accent-gold)'; 
+            
+            // Mostrar la sección del horario
+            const pasoHorario = document.getElementById('paso-horario'); 
+            if (pasoHorario) {
+                pasoHorario.classList.remove('hidden'); 
+                pasoHorario.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
+            }
+
+            // Limpiamos las horas 
+            const contenedorHoras = document.getElementById('contenedor-horas');
+            if (contenedorHoras) {
+                contenedorHoras.innerHTML = '<p style="color:#999;">Selecciona una fecha en el calendario...</p>';
+            }
+            
+            // ESTO ES LO VITAL: Reiniciamos el mes a la fecha actual y llamamos al NUEVO calendario
+            fechaMesActual = new Date(); 
+            inicializarCalendarioAdminEnIndex(id); 
+        }
+
+
+        async function cargarHorasDisponibles() {
+
+            if (
+                !reservaActual.barbero_id ||
+                !reservaActual.fecha
+            ) return;
+
+            try {
+
+                const res = await fetch(
+                    `/api/disponibilidad?barbero_id=${reservaActual.barbero_id}&fecha=${reservaActual.fecha}`
+                );
+
+                const horas = await res.json();
+
+                const contenedor =
+                    document.getElementById('contenedor-horas');
+
+                if (!contenedor) return;
+
+                if (
+                    Array.isArray(horas) &&
+                    horas.length > 0
+                ) {
+
+                    contenedor.innerHTML = horas.map(h => `
+                        <button
+                            class="time-btn"
+                            onclick="seleccionarHora('${h}', this)"
+                        >
+                            ${h}
+                        </button>
+                    `).join('');
+
+                } else {
+
+                    contenedor.innerHTML = `
+                        <p style="color:#ef4444">
+                            No hay horarios disponibles.
+                        </p>
+                    `;
+                }
+
+            } catch (error) {
+
+                console.error(error);
+
+                document.getElementById(
+                    'contenedor-horas'
+                ).innerHTML = `
+                    <p style="color:#ef4444">
+                        Error al cargar horarios.
+                    </p>
+                `;
+            }
+        }
+        // NUEVA FUNCIÓN PROFESIONAL (Cliente)
+        // NUEVA FUNCIÓN PROFESIONAL (Cliente)
+        async function inicializarCalendario(barbero_id) {
+            const selectorFecha = document.getElementById('selector-fecha');
+            if (!selectorFecha) return;
+
+            // 1. Obtener días bloqueados desde el servidor
+            let bloqueadas = [];
+            try {
+                const res = await fetch(`/api/fechas-bloqueadas/${barbero_id}`);
+                bloqueadas = await res.json();
+            } catch(err) { console.error('Error:', err); }
+
+            // 2. Destruir calendario previo si existe (para evitar errores al cambiar de barbero)
+            if (selectorFecha._flatpickr) selectorFecha._flatpickr.destroy();
+
+            // 3. Inicializar Flatpickr de forma elegante
+            flatpickr(selectorFecha, {
+                inline: true, // Esto hace que el calendario se vea fijo y no como popup
+                dateFormat: "Y-m-d",
+                minDate: "today", // No permite reservar días pasados
+                disable: bloqueadas, // Bloquea automáticamente los días que vienen del servidor
+                locale: {
+                    firstDayOfWeek: 1,
+                    weekdays: { shorthand: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'] }
+                },
+                onChange: function(selectedDates, dateStr) {
+                    reservaActual.fecha = dateStr;
+                    cargarHorasDisponibles(); // Al cambiar fecha, refresca las horas
+                }
+            });
+        }
+
+        window.seleccionarHora = function(hora, elementoBtn) {
+            reservaActual.hora = hora;
+            document.querySelectorAll('.time-btn').forEach(b => {
+                b.style.background = 'var(--bg-surface)';
+                b.style.color = 'white';
+                b.style.borderColor = 'var(--border-subtle)';
+            });
+            elementoBtn.style.background = 'var(--accent-gold)';
+            elementoBtn.style.color = 'black';
+            elementoBtn.style.borderColor = 'var(--accent-gold)';
+            const pasoCliente = document.getElementById('paso-cliente');
+            if (pasoCliente) pasoCliente.classList.remove('hidden');
+            pasoCliente?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+        ///////////////////////////////
+        //FUNCION DEL CALENDARIO
+        let fechaMesActual = new Date();
+
+        async function inicializarCalendarioAdminEnIndex(barbero_id) {
+            const grid = document.getElementById('grid-calendario');
+            const titulo = document.getElementById('mes-titulo');
+            if (!grid || !titulo) return;
+
+            const mes = fechaMesActual.getMonth();
+            const anio = fechaMesActual.getFullYear();
+            
+            // Título del mes
+            titulo.textContent = fechaMesActual.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+
+            const diasSemana = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa', 'Do'];
+            const primerDia = new Date(anio, mes, 1).getDay() || 7; // Ajuste para lunes=1, domingo=7
+            const diasMes = new Date(anio, mes + 1, 0).getDate();
+
+            let bloqueadas = [];
+            try {
+                // Obtenemos los bloqueos del servidor
+                const res = await fetch(`/api/fechas-bloqueadas/${barbero_id}`);
+                bloqueadas = await res.json();
+            } catch(err) {
+                console.error('Error cargando fechas bloqueadas:', err);
+            }
+
+            let html = '';
+            
+            // Encabezados de días
+            diasSemana.forEach(d => { 
+                html += `<div style="font-weight:bold; color:var(--text-secondary); margin-bottom:5px;">${d}</div>`; 
+            });
+
+            // Espacios vacíos al inicio del mes
+            for(let i = 1; i < primerDia; i++) { 
+                html += `<div></div>`; 
+            }
+
+            const hoy = new Date();
+            hoy.setHours(0,0,0,0); 
+
+            // Días del mes
+            for(let dia = 1; dia <= diasMes; dia++) {
+                // Corregimos la creación de la cadena de fecha para evitar errores
+                const mesStr = String(mes + 1).padStart(2, '0');
+                const diaStr = String(dia).padStart(2, '0');
+                const fechaStr = `${anio}-${mesStr}-${diaStr}`;
+                
+                const fechaIteracion = new Date(anio, mes, dia);
+                const isPasado = fechaIteracion < hoy;
+                const isBloqueado = bloqueadas.includes(fechaStr);
+
+                if (isPasado || isBloqueado) {
+                    // Día no seleccionable
+                    html += `<div style="padding:10px 0; border-radius:8px; background:#1a1a1a; color:#555; cursor:not-allowed; font-size:14px;">${dia}</div>`;
+                } else {
+                    // Día disponible: usamos una función onclick limpia
+                    html += `<div class="cal-day" data-fecha="${fechaStr}" style="padding:10px 0; border-radius:8px; background:#2a2a2a; border:1px solid var(--border-subtle); cursor:pointer; transition:all 0.3s ease;" onclick="seleccionarDiaEnGrid(this, '${fechaStr}')">${dia}</div>`;
+                }
+            }
+            
+            grid.innerHTML = html;
+        }
+
+        function cambiarMesIndex(direccion) {
+            fechaMesActual.setMonth(fechaMesActual.getMonth() + direccion);
+            if (reservaActual.barbero_id) {
+                inicializarCalendarioAdminEnIndex(reservaActual.barbero_id);
+            }
+        }
+
+        function seleccionarDiaEnGrid(elemento, fechaStr) {
+            document.querySelectorAll('.cal-day').forEach(el => {
+                el.style.borderColor = 'var(--border-subtle)';
+                el.style.color = 'white';
+            });
+            
+            elemento.style.borderColor = 'var(--accent-gold)';
+            elemento.style.color = 'var(--accent-gold)';
+            
+            reservaActual.fecha = fechaStr;
+            cargarHorasDisponibles(); 
+        }
+        //PERFILES
+</script>
+    <footer class="site-footer">
+        <div class="footer-container">
+            <div class="footer-column">
+                <h3>The Salon Barber</h3>
+                <ul class="contact-info">
+                    <li><i class="fa-solid fa-location-dot"></i> Av. la Tirana 3432, Iquique</li>
+                    <li><i class="fa-solid fa-phone"></i> +56 9 1234 5678</li>
+                    <li><i class="fa-solid fa-envelope"></i> info@elsalon.com</li>
+                </ul>
+            </div>
+
+            <div class="footer-column">
+                <h3>Horarios</h3>
+                <ul class="hours-list">
+                    <li><span>Lun - Vie:</span> 10:00 - 20:00</li>
+                    <li><span>Sáb:</span> 10:00 - 18:00</li>
+                    <li><span>Dom:</span> Cerrado</li>
+                </ul>
+            </div>
+
+            <div class="footer-column">
+                <h3>Legal</h3>
+                <ul>
+                    <li><a href="/terminos-condiciones">Términos de Servicio</a></li>
+                    <li><a href="/politica-privacidad">Política de Privacidad</a></li>
+                    <li><a href="/politicas-reserva">Políticas de Reserva y Cancelación</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-column dev-section">
+                <h3>Desarrollado por</h3>
+                <p class="dev-brand"><strong>Armando León</strong></p>
+                <p class="dev-desc">Soluciones web a medida</p>
+                <div class="social-links">
+                    <a href="https://github.com/JesusLeonV" target="_blank" rel="noopener noreferrer" aria-label="GitHub"><i class="fa-brands fa-github"></i></a>
+                    <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><i class="fa-brands fa-linkedin"></i></a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <p>&copy; 2026 The Salon Barber. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+</body>
+</html>
