@@ -129,7 +129,6 @@ app.get('/api/fechas-bloqueadas/:barbero_id', async (req, res) => {
     }
 });
 
-// REGISTRAR CITA
 app.post('/api/citas', async (req, res) => {
     const { barbero_id, servicio_id, fecha, hora, cliente_nombre, cliente_telefono, cliente_correo } = req.body;
     
@@ -142,32 +141,66 @@ app.post('/api/citas', async (req, res) => {
         const [barberos] = await db.query('SELECT nombre, email FROM barberos WHERE id = ?', [barbero_id]);
         const barbero = barberos[0];
 
+        // --- LÓGICA NUEVA PARA EL BOTÓN DE WHATSAPP ---
+        // Limpiamos el teléfono del cliente quitándole espacios, guiones o el símbolo "+" 
+        // para asegurarnos de que la API de WhatsApp no falle.
+        const telefonoLimpio = cliente_telefono.replace(/[^0-9]/g, '');
+
+        // Formateamos la fecha a algo más amigable si viene en formato AAAA-MM-DD
+        let fechaFormateada = fecha;
+        try {
+            const [anio, mes, dia] = fecha.split('-');
+            if(dia && mes) fechaFormateada = `${dia}/${mes}`;
+        } catch(e) { /* Si falla mantiene el formato original */ }
+
+        // Creamos el texto codificado para la URL de WhatsApp
+        const mensajeBase = `Hola ${cliente_nombre}, te escribo de The Salon Barber. Confirmamos tu cita para el día ${fechaFormateada} a las ${hora} Hrs.`;
+        const mensajeCodificado = encodeURIComponent(mensajeBase);
+        const urlWhatsApp = `https://wa.me/${telefonoLimpio}?text=${mensajeCodificado}`;
+        // ----------------------------------------------
+
         // 3. ENVIAR CORREO AL CLIENTE (Confirmación)
         const mailCliente = {
-            from: '"The Salon Barber" <tucorreo@tuempresa.com>',
+            from: '"The Salon Barber" <tucorreo@gmail.com>', // Usa la misma cuenta autenticada
             to: cliente_correo,
-            subject: '¡Tu cita ha sido confirmada!',
+            subject: '¡Tu cita ha sido confirmada! 💈',
             html: `<h2>Hola ${cliente_nombre}</h2>
                    <p>Tu reserva con <b>${barbero.nombre}</b> está confirmada.</p>
-                   <p>Fecha: ${fecha}<br>Hora: ${hora}</p>
+                   <p>Fecha: <b>${fechaFormateada}</b><br>Hora: <b>${hora} Hrs</b></p>
                    <p>¡Te esperamos!</p>`
         };
 
-        // 4. ENVIAR CORREO AL BARBERO (Notificación de nueva cita)
+        // 4. ENVIAR CORREO AL BARBERO (Notificación con botón de contacto inmediato)
         const mailBarbero = {
-            from: '"Sistema de Reservas" <tucorreo@tuempresa.com>',
+            from: '"The Salon Barber Sistema" <tucorreo@gmail.com>',
             to: barbero.email,
-            subject: 'Nueva reserva recibida',
-            html: `<h2>Tienes una nueva cita</h2>
-                   <p><b>Cliente:</b> ${cliente_nombre}<br>
-                   <b>Teléfono:</b> ${cliente_telefono}<br>
-                   <b>Fecha:</b> ${fecha}<br>
-                   <b>Hora:</b> ${hora}</p>`
+            subject: `Nueva cita agendada - ${cliente_nombre} (${hora} Hrs)`,
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 500px; border: 1px solid #ddd; padding: 20px; border-radius: 8px;">
+                    <h2 style="color: #2c3e50; margin-top: 0;">💈 ¡Tienes una nueva cita!</h2>
+                    <p style="font-size: 16px;">Hola <b>${barbero.nombre}</b>, un usuario ha reservado un espacio contigo.</p>
+                    
+                    <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                        <p style="margin: 5px 0;"><b>Cliente:</b> ${cliente_nombre}</p>
+                        <p style="margin: 5px 0;"><b>Fecha:</b> ${fechaFormateada}</p>
+                        <p style="margin: 5px 0;"><b>Hora:</b> ${hora} Hrs</p>
+                        <p style="margin: 5px 0;"><b>Teléfono:</b> ${cliente_telefono}</p>
+                    </div>
+                    
+                    <p style="font-size: 14px; color: #555;">Haz clic en el siguiente botón para abrir su chat de WhatsApp con el recordatorio listo para enviar:</p>
+                    
+                    <div style="text-align: center; margin-top: 20px;">
+                        <a href="${urlWhatsApp}" target="_blank" style="background-color: #25D366; color: white; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; display: inline-block; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            💬 Contactar por WhatsApp
+                        </a>
+                    </div>
+                </div>
+            `
         };
 
-        // Ejecutar los envíos (no hace falta esperar a que terminen para responder al cliente)
-        transporter.sendMail(mailCliente);
-        transporter.sendMail(mailBarbero);
+        // Ejecutar los envíos en segundo plano
+        transporter.sendMail(mailCliente, (err) => { if(err) console.error("Error mail cliente:", err); });
+        transporter.sendMail(mailBarbero, (err) => { if(err) console.error("Error mail barbero:", err); });
 
         res.status(201).json({ success: true });
     } catch (error) { 
