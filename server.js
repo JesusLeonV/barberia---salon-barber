@@ -12,7 +12,7 @@ const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: 'thesalonbarberagenda@gmail.com', // TU CORREO
-        pass: 'dubfaxadvrovhvgw' // "Contraseña de Aplicación" de Google, no tu contraseña normal
+        pass: 'dubfaxadvrovhvgw' // "Contraseña de Aplicación" de Google
     }
 });
 
@@ -44,7 +44,7 @@ app.get('/api/lista-bloqueos', async (req, res) => {
         res.json(rows);
     } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
-//DISPONIBILIDAD
+
 // DISPONIBILIDAD (Calcula horas libres reales)
 app.get('/api/disponibilidad', async (req, res) => {
     const { barbero_id, fecha } = req.query;
@@ -86,6 +86,7 @@ app.get('/api/disponibilidad', async (req, res) => {
         res.status(500).json({ error: 'Error' }); 
     }
 });
+
 // OBTENER SERVICIOS
 app.get('/api/servicios', async (req, res) => {
     try {
@@ -102,19 +103,13 @@ app.get('/api/barberos', async (req, res) => {
     } catch (error) { res.status(500).json({ error: 'Error' }); }
 });
 
-
-// API CALENDARIO VISUAL (NUEVA)
+// API CALENDARIO VISUAL
 app.get('/api/fechas-bloqueadas/:barbero_id', async (req, res) => {
     const { barbero_id } = req.params;
-    
-    // Detectamos si el que pregunta es el Panel Admin o el Cliente normal
     const isAdmin = req.query.admin === 'true'; 
     
     try {
         let query = "SELECT fecha FROM dias_bloqueados WHERE barbero_id = ?";
-        
-        // Si el que mira es el CLIENTE, solo tachamos el día si la ausencia es "completo".
-        // Si es "parcial", no lo enviamos aquí para que el cliente pueda hacerle clic.
         if (!isAdmin) {
             query += " AND tipo = 'completo'"; 
         }
@@ -129,6 +124,7 @@ app.get('/api/fechas-bloqueadas/:barbero_id', async (req, res) => {
     }
 });
 
+// --- RUTA POST CITAS CORREGIDA ---
 app.post('/api/citas', async (req, res) => {
     const { barbero_id, servicio_id, fecha, hora, cliente_nombre, cliente_telefono, cliente_correo } = req.body;
     
@@ -137,48 +133,87 @@ app.post('/api/citas', async (req, res) => {
         await db.query('INSERT INTO citas (barbero_id, servicio_id, fecha, hora, cliente_nombre, cliente_telefono, cliente_correo, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', 
         [barbero_id, servicio_id, fecha, hora, cliente_nombre, cliente_telefono, cliente_correo, 'confirmada']);
 
-        // 2. Buscar datos del barbero seleccionado
-        const [barberos] = await db.query('SELECT nombre, email FROM barberos WHERE id = ?', [barbero_id]);
+        // 2. Buscar datos detallados del barbero seleccionado (incluyendo su Instagram)
+        const [barberos] = await db.query('SELECT nombre, email, instagram FROM barberos WHERE id = ?', [barbero_id]);
         const barbero = barberos[0];
 
-        // --- LÓGICA NUEVA PARA EL BOTÓN DE WHATSAPP ---
-        // Limpiamos el teléfono del cliente quitándole espacios, guiones o el símbolo "+" 
-        // para asegurarnos de que la API de WhatsApp no falle.
+        // Limpieza de formato para teléfono y fecha
         const telefonoLimpio = cliente_telefono.replace(/[^0-9]/g, '');
-
-        // Formateamos la fecha a algo más amigable si viene en formato AAAA-MM-DD
         let fechaFormateada = fecha;
         try {
             const [anio, mes, dia] = fecha.split('-');
             if(dia && mes) fechaFormateada = `${dia}/${mes}`;
-        } catch(e) { /* Si falla mantiene el formato original */ }
+        } catch(e) { /* Fallback */ }
 
-        // Creamos el texto codificado para la URL de WhatsApp
+        // Texto codificado para URL de WhatsApp
         const mensajeBase = `Hola ${cliente_nombre}, te escribo de The Salon Barber. Confirmamos tu cita para el día ${fechaFormateada} a las ${hora} Hrs.`;
         const mensajeCodificado = encodeURIComponent(mensajeBase);
         const urlWhatsApp = `https://wa.me/${telefonoLimpio}?text=${mensajeCodificado}`;
-        // ----------------------------------------------
 
-        // 3. ENVIAR CORREO AL CLIENTE (Confirmación)
+        // URL del logo de tu barbería (Reemplaza con la URL real de tu logo en producción)
+        const urlLogo = "https://www.thesalonbarber.cl/images/logobarber.png"; 
+
+        // 3. CONFIGURACIÓN DEL CORREO AL CLIENTE (Diseño Profesional Premium)
+        // Validamos si el barbero tiene instagram registrado, si no, dejamos un texto amigable
+        const instagramBarberoHTML = barbero.instagram 
+            ? `<p style="margin: 5px 0 15px 0; font-size: 14px; color: #a0aec0;">Puedes conocer más de su trabajo en su cuenta de Instagram:</p>
+               <a href="${barbero.instagram}" target="_blank" style="color: #F1C40F; text-decoration: none; font-weight: bold; font-size: 15px;"><i class="fab fa-instagram"></i> @${barbero.nombre.split(' ')[0]}.barber 📸</a>`
+            : '';
+
         const mailCliente = {
-            from: '"The Salon Barber" <thesalonbarberagenda@gmail.com>', // Usa la misma cuenta autenticada
+            from: '"The Salon Barber" <thesalonbarberagenda@gmail.com>',
             to: cliente_correo,
-            subject: '¡Tu cita ha sido confirmada! 💈',
-            html: `<h2>Hola ${cliente_nombre}</h2>
-                   <p>Tu reserva con <b>${barbero.nombre}</b> está confirmada.</p>
-                   <p>Fecha: <b>${fechaFormateada}</b><br>Hora: <b>${hora} Hrs</b></p>
-                   <p>¡Te esperamos!</p>`
+            subject: '¡Tu cita ha sido confirmada! Gracias por tu confianza 💈',
+            html: `
+                <table style="width: 100%; max-width: 600px; margin: 0 auto; font-family: 'Poppins', Arial, sans-serif; background-color: #111111; color: #ffffff; border-collapse: collapse; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+                    <tr>
+                        <td style="padding: 30px; text-align: center; background-color: #1a1a1a; border-bottom: 2px solid #F1C40F;">
+                            <img src="${urlLogo}" alt="The Salon Barber" style="max-width: 140px; height: auto;" onerror="this.style.display='none'">
+                            <h1 style="font-size: 22px; color: #F1C40F; margin: 15px 0 0 0; text-transform: uppercase; letter-spacing: 1px;">¡Cita Confirmada!</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 40px 30px; background-color: #141414;">
+                            <p style="font-size: 18px; margin-top: 0; color: #ffffff;">Hola <strong>${cliente_nombre}</strong>,</p>
+                            <p style="font-size: 15px; line-height: 1.6; color: #cbd5e0;">
+                                Queremos agradecer sinceramente tu preferencia y la confianza que depositas en nuestro equipo para el cuidado de tu estilo. Tu espacio ha sido reservado de forma exitosa.
+                            </p>
+                            
+                            <div style="background-color: #1a1a1a; border: 1px solid #2d2d2d; padding: 20px; border-radius: 8px; margin: 25px 0; text-align: left;">
+                                <h3 style="margin-top: 0; color: #F1C40F; border-bottom: 1px solid #2d2d2d; padding-bottom: 8px; text-transform: uppercase; font-size: 14px; letter-spacing: 0.5px;">Resumen de tu Turno</h3>
+                                <p style="margin: 8px 0; font-size: 15px; color: #e2e8f0;"><strong>Profesional:</strong> ${barbero.nombre}</p>
+                                <p style="margin: 8px 0; font-size: 15px; color: #e2e8f0;"><strong>Fecha:</strong> ${fechaFormateada}</p>
+                                <p style="margin: 8px 0; font-size: 15px; color: #e2e8f0;"><strong>Horario:</strong> ${hora} Hrs</p>
+                            </div>
+
+                            <div style="background-color: #1e1b10; border-left: 4px solid #F1C40F; padding: 15px; border-radius: 4px; margin-bottom: 25px; text-align: left;">
+                                <h4 style="margin: 0 0 5px 0; color: #F1C40F; font-size: 15px;">Conoce a tu Barbero</h4>
+                                ${instagramBarberoHTML}
+                            </div>
+                            
+                            <p style="font-size: 14px; color: #a0aec0; line-height: 1.5; margin-bottom: 0;">
+                                * Si necesitas reagendar o cancelar, por favor infórmanos con anticipación. ¡Nos vemos pronto para darte la mejor experiencia!
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 20px; text-align: center; background-color: #1a1a1a; font-size: 12px; color: #718096; border-top: 1px solid #2d2d2d;">
+                            © 2026 The Salon Barber Iquique. Todos los derechos reservados.
+                        </td>
+                    </tr>
+                </table>
+            `
         };
 
-        // 4. ENVIAR CORREO AL BARBERO (Notificación con botón de contacto inmediato)
+        // 4. CONFIGURACIÓN DEL CORREO AL BARBERO (Estructura de gestión interna)
         const mailBarbero = {
             from: '"The Salon Barber Sistema" <thesalonbarberagenda@gmail.com>',
             to: barbero.email,
             subject: `Nueva cita agendada - ${cliente_nombre} (${hora} Hrs)`,
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 500px; border: 1px solid #ddd; padding: 20px; border-radius: 8px;">
-                    <h2 style="color: #2c3e50; margin-top: 0;">💈 ¡Tienes una nueva cita!</h2>
-                    <p style="font-size: 16px;">Hola <b>${barbero.nombre}</b>, un usuario ha reservado un espacio contigo.</p>
+                    <h2 style="color: #2c3e50; margin-top: 0;">💈 ¡Tienes una nueva cita, ${barbero.nombre}!</h2>
+                    <p style="font-size: 16px;">Un usuario ha reservado un espacio contigo.</p>
                     
                     <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
                         <p style="margin: 5px 0;"><b>Cliente:</b> ${cliente_nombre}</p>
@@ -198,32 +233,21 @@ app.post('/api/citas', async (req, res) => {
             `
         };
 
-        // Ejecutar los envíos de manera segura para que fallos individuales no rompan la respuesta
-        try {
+        // ENVIAR CORREOS DE MANERA INDEPENDIENTE
+        if (cliente_correo) {
             transporter.sendMail(mailCliente, (err, info) => { 
-                if(err) {
-                    console.error("❌ ERROR EN MAIL CLIENTE:", err.message);
-                } else {
-                    console.log("✅ Mail cliente enviado con éxito:", info.response);
-                }
+                if(err) console.error("❌ ERROR EN MAIL CLIENTE:", err.message);
+                else console.log("✅ Mail enviado al CLIENTE:", cliente_correo);
             });
-        } catch (mailErr) {
-            console.error("❌ Fallo crítico disparando mailCliente:", mailErr);
         }
 
-        try {
+        if (barbero && barbero.email) {
             transporter.sendMail(mailBarbero, (err, info) => { 
-                if(err) {
-                    console.error("❌ ERROR EN MAIL BARBERO:", err.message);
-                } else {
-                    console.log("✅ Mail barbero enviado con éxito:", info.response);
-                }
+                if(err) console.error("❌ ERROR EN MAIL BARBERO:", err.message);
+                else console.log("✅ Mail enviado al BARBERO:", barbero.email);
             });
-        } catch (mailErr) {
-            console.error("❌ Fallo crítico disparando mailBarbero:", mailErr);
         }
 
-        // Enviamos la respuesta 201 al cliente inmediatamente
         res.status(201).json({ success: true });
     } catch (error) { 
         console.error("Error al agendar o enviar correo:", error);
@@ -240,33 +264,26 @@ app.post('/api/registro', async (req, res) => {
         res.json({ success: true, message: 'Creado.' });
     } catch (error) { res.status(500).json({ success: false }); }
 });
-//LOGIN
+
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
-    
     try {
         const [rows] = await db.query('SELECT * FROM usuarios WHERE email = ?', [email]);
-        
         if (rows.length === 0 || !(await bcrypt.compare(password, rows[0].password))) {
             return res.status(401).json({ success: false, error: 'Correo o contraseña incorrectos.' });
         }
-        
         res.json({ 
             success: true, 
             token: jwt.sign({ id: rows[0].id, rol: rows[0].rol }, JWT_SECRET, { expiresIn: '24h' }), 
             usuario: rows[0] 
         });
-
     } catch (error) {
-        // ESTO ES CLAVE: Imprimirá el error real en la terminal de tu servidor
         console.error("Error crítico en el login:", error);
-        
-        // Y le responderá al frontend para que no se quede "colgado"
         res.status(500).json({ success: false, error: 'Error interno del servidor al iniciar sesión.' });
     }
 });
 
-// BLOQUEAR DÍA (ÚNICA DEFINICIÓN)
+// BLOQUEAR DÍA
 app.post('/api/bloquear-dia', async (req, res) => {
     const { barbero_id, fecha, motivo, tipo, hora_inicio, hora_fin } = req.body;
     try {
@@ -277,6 +294,7 @@ app.post('/api/bloquear-dia', async (req, res) => {
         res.json({ success: true });
     } catch (error) { res.status(500).json({ success: false }); }
 });
+
 // API PERFIL BARBERO
 app.get('/api/barbero/:id', async (req, res) => {
     try {
@@ -285,6 +303,7 @@ app.get('/api/barbero/:id', async (req, res) => {
         else res.status(404).json({ error: 'Barbero no encontrado' });
     } catch (error) { res.status(500).json({ error: 'Error interno' }); }
 });
+
 // ELIMINAR UN BLOQUEO
 app.delete('/api/bloquear-dia', async (req, res) => {
     const { barbero_id, fecha } = req.body;
@@ -293,7 +312,7 @@ app.delete('/api/bloquear-dia', async (req, res) => {
         res.json({ success: true });
     } catch (error) { res.status(500).json({ success: false }); }
 });
-// Asegúrate de servir el perfil
+
 app.get('/perfil/:id', (req, res) => res.sendFile(path.join(__dirname, 'views', 'perfil.html')));
 
 app.listen(3005, '0.0.0.0', () => console.log('Servidor escuchando en puerto 3005'));
