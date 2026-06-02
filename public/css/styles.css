@@ -577,61 +577,7 @@ body {
 }
 .footer-bottom p { margin: 0; font-size: 13px; color: #555555; }
 
-/* ==========================================================================
-8. MEDIA QUERIES (Responsividad Global)
-========================================================================== */
 
-@media (max-width: 900px) {
-    /* 1. REPARACIÓN DEL NAVBAR (MENÚ SUPERIOR) */
-    .navbar {
-        padding: 15px 10px !important;
-    }
-    .nav-container {
-        flex-direction: column !important; /* Apila el logo arriba y el login abajo */
-        align-items: center !important;
-        justify-content: center !important;
-        gap: 12px !important;
-    }
-    .nav-brand {
-        text-align: center !important;
-        align-items: center !important;
-    }
-    .nav-user-section, #nav-user-section {
-        justify-content: center !important;
-        width: 100% !important;
-        margin-top: 5px !important;
-    }
-
-    /* 2. REPARACIÓN DEL BANNER (IMAGEN APLASTADA) */
-    .hero-grid {
-        grid-template-columns: 1fr !important;
-        gap: 20px !important;
-    }
-    .main-banner {
-        width: 100% !important;
-        height: 220px !important; /* Le damos una altura fija ideal para celulares */
-        border-radius: 8px !important;
-        overflow: hidden !important;
-    }
-    .img-fluid {
-        width: 100% !important;
-        height: 100% !important;
-        object-fit: cover !important; /* MAGIA: Esto recorta los bordes sobrantes sin aplastar la imagen */
-        object-position: center !important; /* Centra el recorte en la parte más importante de la foto */
-        display: block !important;
-    }
-
-    /* Ajustes generales de la grilla para que respire */
-    .main-wrapper {
-        margin: 15px auto !important;
-        padding: 0 16px !important;
-    }
-    .booking-layout {
-        grid-template-columns: 1fr !important;
-        gap: 20px !important;
-    }
-    .booking-sidebar { display: none !important; }
-}
 
 /* ==========================================================================
    9. OPTIMIZACIÓN EXCLUSIVA PARA EL PANEL DE ADMINISTRACIÓN / BARBEROS
@@ -688,4 +634,12 @@ body {
         border-radius: 4px;
         display: inline-block;
     }
+}
+.barber-row img {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;      
+    object-fit: cover;       
+    border: 2px solid #F1C40F; 
+    margin-right: 15px;
 }
