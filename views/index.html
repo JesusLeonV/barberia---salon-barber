@@ -9,13 +9,52 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+<style>
+    /* FORZAR RESPONSIVIDAD DESDE EL HTML PARA EVITAR CACHÉ */
+    @media (max-width: 900px) {
+        .navbar {
+            padding: 15px 10px !important;
+        }
+        .nav-container {
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 12px !important;
+        }
+        .nav-brand {
+            text-align: center !important;
+        }
+        .nav-user-section, #nav-user-section {
+            justify-content: center !important;
+            width: 100% !important;
+            margin-top: 5px !important;
+        }
+        .hero-grid {
+            grid-template-columns: 1fr !important;
+        }
+        .main-banner {
+            width: 100% !important;
+            height: 220px !important; 
+            border-radius: 8px !important;
+            overflow: hidden !important;
+            display: block !important;
+        }
+        .img-fluid {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important; 
+            object-position: center !important; 
+            display: block !important;
+        }
+    }
+</style>
 </head>
 <body>
 
     <nav class="navbar">
         <div class="nav-container">
             <span class="nav-brand"><strong>The Salon Barber</strong> <span class="nav-branch">@the_salonbarber</span></span>
-            <div id="nav-user-section">
+            <div id="nav-user-section" class="nav-user-section">
                 <button id="btn-abrir-login" class="nav-login" style="background:transparent; border:none; color:var(--text-secondary); font-weight:bold; cursor:pointer;">Iniciar sesión <i class="fa-solid fa-user"></i></button>
             </div>
         </div>
@@ -357,19 +396,32 @@
         }
 
         function verificarSesion() {
-            const usuarioStr = localStorage.getItem('usuario');
-            const userSection = document.getElementById('nav-user-section');
-            if (!usuarioStr || !userSection) return;
-            
-            const usuario = JSON.parse(usuarioStr);
-            const nombreCorto = usuario.nombre.split(' ')[0];
-            
-            // CORRECCIÓN: Se eliminaron las \ antes del $
-            userSection.innerHTML = `<span style="color: var(--accent-gold); font-size: 13.5px; font-weight: bold; margin-right: 15px;">Hola, ${nombreCorto}</span>${usuario.rol === 'barbero' ? '<a href="/admin.html" style="color: var(--text-secondary); text-decoration: none; margin-right: 15px; font-size: 13px; font-weight: bold;"><i class="fa-solid fa-gear"></i> Panel</a>' : ''}<button onclick="cerrarSesion()" style="background:transparent; border:none; color:#ef4444; font-weight:bold; cursor:pointer; font-size: 13.5px;">Salir <i class="fa-solid fa-right-from-bracket"></i></button>`;
-            
-            const inputNombre = document.getElementById('cliente-nombre');
-            if (inputNombre) inputNombre.value = usuario.nombre;
-        }
+    const usuarioStr = localStorage.getItem('usuario');
+    const userSection = document.getElementById('nav-user-section');
+    if (!usuarioStr || !userSection) return;
+    
+    const usuario = JSON.parse(usuarioStr);
+    const nombreCorto = usuario.nombre.split(' ')[0];
+    
+    // Inyectamos el saludo, y si es barbero, añadimos los botones de Agenda y Panel Admin
+    userSection.innerHTML = `
+        <span style="color: var(--accent-gold); font-size: 13.5px; font-weight: bold; margin-right: 15px;">Hola, ${nombreCorto}</span>
+        ${usuario.rol === 'barbero' ? `
+            <a href="/barbero.html" style="background: #F1C40F; color: black; padding: 4px 10px; border-radius: 4px; text-decoration: none; margin-right: 15px; font-size: 12.5px; font-weight: bold; border: 1px solid #F1C40F;">
+                <i class="fa-solid fa-calendar-days"></i> Mi Agenda
+            </a>
+            <a href="/admin.html" style="color: var(--text-secondary); text-decoration: none; margin-right: 15px; font-size: 13px; font-weight: bold;">
+                <i class="fa-solid fa-gear"></i> Panel
+            </a>
+        ` : ''}
+        <button onclick="cerrarSesion()" style="background:transparent; border:none; color:#ef4444; font-weight:bold; cursor:pointer; font-size: 13.5px;">
+            Salir <i class="fa-solid fa-right-from-bracket"></i>
+        </button>
+    `;
+    
+    const inputNombre = document.getElementById('cliente-nombre');
+    if (inputNombre) inputNombre.value = usuario.nombre;
+}
 
         function cerrarSesion() {
             localStorage.removeItem('token');
@@ -776,8 +828,8 @@
                 <h3>The Salon Barber</h3>
                 <ul class="contact-info">
                     <li><i class="fa-solid fa-location-dot"></i> Av. la Tirana 3432, Iquique</li>
-                    <li><i class="fa-solid fa-phone"></i> +56 9 1234 5678</li>
-                    <li><i class="fa-solid fa-envelope"></i> info@elsalon.com</li>
+                    <li><i class="fa-solid fa-phone"></i> +56 9 2627 3092</li>
+                    <li><i class="fa-solid fa-envelope"></i> thesalonbarberagenda@gmail.com</li>
                 </ul>
             </div>
 
@@ -793,9 +845,9 @@
             <div class="footer-column">
                 <h3>Legal</h3>
                 <ul>
-                    <li><a href="/terminos-condiciones">Términos de Servicio</a></li>
-                    <li><a href="/politica-privacidad">Política de Privacidad</a></li>
-                    <li><a href="/politicas-reserva">Políticas de Reserva y Cancelación</a></li>
+                    <li><a href="/terminos">Términos de Servicio</a></li>
+                    <li><a href="/privacidad">Política de Privacidad</a></li>
+                    <li><a href="/cancelacion">Políticas de Reserva y Cancelación</a></li>
                 </ul>
             </div>
 

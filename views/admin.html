@@ -2,22 +2,193 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Administración | The Salon Barber</title>
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root { --accent-gold: #eab308; --bg-surface: #1a1a1a; --border-subtle: #333; }
-        body { background: #0f0f0f; color: white; font-family: sans-serif; }
-        .admin-container { max-width: 500px; margin: 40px auto; padding: 20px; }
-        .card { background: var(--bg-surface); padding: 25px; border-radius: 15px; border: 1px solid #333; margin-bottom: 20px; }
-        .btn-volver { color: var(--accent-gold); text-decoration: none; font-size: 14px; margin-bottom: 20px; display: inline-block; }
+<style>
+        :root { 
+            --accent-gold: #eab308; 
+            --bg-surface: #1a1c22; 
+            --border-subtle: #2a2d35; 
+            --text-secondary: #9ca3af;
+        }
+        
+        body { 
+            background: #121316; 
+            color: white; 
+            font-family: 'Segoe UI', -apple-system, Roboto, sans-serif; 
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        
+        /* CONTENEDOR PRINCIPAL: Ahora idéntico al .main-wrapper del index */
+        .admin-container { 
+            width: 100% !important;
+            max-width: 1300px; 
+            margin: 30px auto; 
+            padding: 0 24px; 
+            box-sizing: border-box;
+            flex: 1;
+        }
+        
+        .card { 
+            background: var(--bg-surface); 
+            padding: 25px; 
+            border-radius: 12px; 
+            border: 1px solid var(--border-subtle); 
+            margin-bottom: 20px; 
+            width: 100% !important;
+            box-sizing: border-box;
+        }
+        
+        .btn-volver { 
+            color: var(--accent-gold); 
+            text-decoration: none; 
+            font-size: 16px; 
+            margin-bottom: 20px; 
+            display: inline-block; 
+            font-weight: 700;
+        }
+        
+        /* CONTENEDOR DEL CALENDARIO: Forzado idéntico al index (.cal-container) */
+        #calendario-admin {
+            background: #0f1113 !important;
+            border-radius: 12px !important;
+            padding: 16px !important;
+            border: 1px solid var(--border-subtle) !important;
+            width: 100% !important;
+            box-sizing: border-box;
+            display: block !important; /* El contenedor es un bloque que encierra la grilla */
+        }
+
+        .cal-header { 
+            display: flex !important; 
+            justify-content: space-between !important; 
+            align-items: center !important; 
+            gap: 10px; 
+            margin-bottom: 12px; 
+        }
+
+        .cal-header h3 { 
+            margin: 0; 
+            color: var(--accent-gold); 
+            font-weight: 700; 
+            text-transform: lowercase; 
+            text-align: center; 
+            width: 100%; 
+            font-size: 20px;
+        }
+
+        .cal-nav-btn { 
+            background: transparent; 
+            border: 1px solid var(--border-subtle); 
+            color: var(--text-secondary); 
+            padding: 10px 16px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+        .cal-nav-btn:hover { 
+            border-color: var(--accent-gold); 
+            color: var(--accent-gold); 
+        }
+
+        /* GRILLA DEL CALENDARIO: Rompe el block del agente de usuario y fuerza el Grid */
+        #grid-admin-calendario { 
+            display: grid !important; 
+            grid-template-columns: repeat(7, 1fr) !important; 
+            gap: 8px !important; 
+            margin-top: 10px !important; 
+            width: 100% !important;
+            box-sizing: border-box;
+        }
+
+        /* TEXTOS DE LOS DÍAS DE LA SEMANA (Lu, Ma, Mi...) */
+        #grid-admin-calendario .cal-weekday,
+        #grid-admin-calendario div[style*="font-weight:bold"] {
+            display: block !important;
+            font-weight: 700 !important;
+            text-align: center !important;
+            color: var(--text-secondary) !important;
+            font-size: 13px !important;
+            padding: 6px 0 !important;
+        }
+        
+        /* LAS CELDAS DE LOS DÍAS: Tamaño perfecto e idéntico al index */
+        .dia-celda { 
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            text-align: center !important;
+            padding: 12px 8px !important;
+            min-height: 42px !important;
+            cursor: pointer !important;
+            border-radius: 8px !important;
+            border: 1px solid var(--border-subtle) !important;
+            font-size: 14px !important;
+            background: var(--bg-surface) !important;
+            box-sizing: border-box;
+            transition: all 0.18s ease;
+            color: #ffffff;
+        }
+
+        .dia-celda:hover:not(.disabled) { 
+            transform: translateY(-3px) !important;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.45) !important;
+            border-color: rgba(234,179,8,0.25) !important;
+            background: rgba(234,179,8,0.06) !important;
+        }
+
+        .dia-celda.disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            background: #111216 !important;
+            color: #8b5a5a !important;
+            border-style: dashed !important;
+        }
+
+        /* Bloqueos activos en la lista inferior */
         .bloqueo-item { 
-            display: flex; align-items: center; justify-content: space-between; 
-            padding: 12px; background: #252525; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid var(--accent-gold);
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            padding: 16px; 
+            background: #1e2129; 
+            margin-bottom: 12px; 
+            border-radius: 10px; 
+            border: 1px solid var(--border-subtle);
+            border-left: 4px solid var(--accent-gold);
+            font-size: 15px;
         }
         .date-badge { font-weight: bold; color: var(--accent-gold); }
-        .cal-day { font-size: 14px; }
-        .cal-day.available:hover { background: rgba(234, 179, 8, 0.12); }
+
+        /* RESPONSIVIDAD PARA CELULARES */
+        @media (max-width: 900px) {
+            .admin-container {
+                margin: 15px auto;
+                padding: 0 16px;
+            }
+            #grid-admin-calendario {
+                gap: 6px !important;
+            }
+            .dia-celda {
+                padding: 10px 4px !important;
+                min-height: 38px !important;
+                font-size: 13px !important;
+            }
+            .bloqueo-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -25,11 +196,14 @@
         <a href="/" class="btn-volver"><i class="fa-solid fa-arrow-left"></i> Volver al sitio</a>
         
         <div class="card">
-            <h2 style="margin-top:0; color:var(--accent-gold); text-align:center;">Gestión de Ausencias 💈</h2>
-            <label>Barbero:</label>
-            <select id="select-barbero" style="width:100%; padding:10px; margin-bottom:15px; border-radius:8px; background:#000; color:white; border:1px solid #444;"></select>
-            <p style="font-size:14px; color:#cbd5e1; margin-top:10px;">
-                Selecciona un día en el calendario para bloquear la ausencia del barbero.
+            <h2 id="titulo-admin-autenticado" style="margin-top:0; color:var(--accent-gold); text-align:center; font-size: 26px;">Gestión de Ausencias 💈</h2>
+            
+            <div style="background: #111; padding: 16px; border-radius: 8px; border: 1px solid #2d2d2d; margin-bottom: 18px; text-align: center;">
+                <p id="subtitulo-perfil" style="margin:0; font-size: 16px; color: #cbd5e1;">Identificando perfil profesional...</p>
+            </div>
+            
+            <p style="font-size:15px; color:#cbd5e1; margin-top:10px; text-align: center;">
+                Selecciona un día en el calendario de abajo para bloquear o liberar tus ausencias.
             </p>
             <div id="mensaje-admin" style="margin-top:15px; text-align:center; font-size: 14px;"></div>
         </div>
@@ -39,7 +213,7 @@
             <div id="lista-bloqueos">Cargando...</div>
         </div>
 
-        <div id="calendario-admin" class="card">
+        <div id="calendario-admin" class="cal-container">
             <div class="cal-header">
                 <button id="admin-prev-mes" class="cal-nav-btn">◀</button>
                 <h3 id="admin-mes-titulo"></h3>
@@ -56,35 +230,58 @@
             calendarioMes: new Date()
         };
 
-        // Tus horarios oficiales del sistema
         const horasPosibles = [
             "10:30", "11:10", "11:50", "12:30", "13:10", "13:50", "14:30", "15:10", 
             "15:50", "16:30", "17:10", "17:50", "18:30", "19:10", "19:50", "20:30"
         ];
 
         document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('select-barbero').addEventListener('change', () => {
-                adminState.selectedBarberoId = document.getElementById('select-barbero').value;
-                cargarBloqueosPorBarbero();
-            });
             document.getElementById('admin-prev-mes').addEventListener('click', () => cambiarMesAdmin(-1));
             document.getElementById('admin-next-mes').addEventListener('click', () => cambiarMesAdmin(1));
-            cargarBarberos();
-            cargarListaBloqueos();
+            verificarYVerificarSesionAdmin();
         });
 
-        async function cargarBarberos() {
+        // REGLA DE PRIVACIDAD: Identifica al usuario del LocalStorage de forma segura
+        async function verificarYVerificarSesionAdmin() {
+            const usuarioStr = localStorage.getItem('usuario');
+            if (!usuarioStr) {
+                alert("Sesión expirada. Por favor vuelve a iniciar sesión.");
+                window.location.href = '/';
+                return;
+            }
+
+            const usuario = JSON.parse(usuarioStr);
+
+            if (usuario.rol !== 'barbero') {
+                alert("Acceso denegado. Área reservada para personal.");
+                window.location.href = '/';
+                return;
+            }
+
             try {
+                // Buscamos los barberos para emparejar el ID mediante barbero_id o email
                 const res = await fetch('/api/barberos');
                 const barberos = await res.json();
-                const select = document.getElementById('select-barbero');
-                select.innerHTML = barberos.map(b => `<option value="${b.id}">${b.nombre}</option>`).join('');
-                if (barberos.length > 0) {
-                    adminState.selectedBarberoId = barberos[0].id;
+                
+                const barberoEncontrado = usuario.barbero_id
+                    ? barberos.find(b => b.id === usuario.barbero_id)
+                    : barberos.find(b => b.email?.toLowerCase() === usuario.email?.toLowerCase());
+
+                if (barberoEncontrado) {
+                    adminState.selectedBarberoId = barberoEncontrado.id;
+                    
+                    // Modificamos el DOM fijando su identidad en vez de usar el selector select-barbero
+                    document.getElementById('titulo-admin-autenticado').innerHTML = `Ausencias de <span style="color:white;">${barberoEncontrado.nombre}</span> 💈`;
+                    document.getElementById('subtitulo-perfil').innerHTML = `Conectado como: <b>${usuario.email}</b>`;
+                    
+                    // Carga su ecosistema único
+                    cargarListaBloqueos();
                     cargarBloqueosPorBarbero();
+                } else {
+                    document.getElementById('subtitulo-perfil').innerHTML = `<span style="color:#ef4444;">Error: Correo no asignado a ningún barbero.</span>`;
                 }
             } catch (err) {
-                console.error('Error cargando barberos:', err);
+                console.error(err);
             }
         }
 
@@ -93,11 +290,16 @@
                 const res = await fetch('/api/lista-bloqueos');
                 const bloqueos = await res.json();
                 const contenedor = document.getElementById('lista-bloqueos');
-                if (!bloqueos || bloqueos.length === 0) {
-                    contenedor.innerHTML = '<p style="color:#555; text-align:center;">Sin días bloqueados</p>';
+                
+                // Filtramos la lista global para que el barbero SOLO vea sus propias ausencias programadas
+                const susBloqueos = bloqueos.filter(b => parseInt(b.barbero_id || b.id) === parseInt(adminState.selectedBarberoId) || b.barbero_nombre === document.getElementById('titulo-admin-autenticado').innerText.split(' de ')[1].split(' 💈')[0]);
+
+                if (!susBloqueos || susBloqueos.length === 0) {
+                    contenedor.innerHTML = '<p style="color:#555; text-align:center;">No registras días bloqueados actualmente</p>';
                     return;
                 }
-                contenedor.innerHTML = bloqueos.map(l => {
+
+                contenedor.innerHTML = susBloqueos.map(l => {
                     const soloFecha = l.fecha.split('T')[0]; 
                     const fechaObj = new Date(soloFecha + 'T12:00:00'); 
                     const fechaFormateada = fechaObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -109,7 +311,7 @@
                         <div class="bloqueo-item" style="align-items: flex-start;">
                             <div style="flex:1;">
                                 <span style="display:block; font-weight:bold; margin-bottom:5px; color: white;">
-                                    <i class="fa-solid fa-user-scissors"></i> ${l.barbero_nombre} ${etiquetaTipo}
+                                    <i class="fa-solid fa-user-scissors"></i> Mi Cuenta ${etiquetaTipo}
                                 </span>
                                 <span style="font-size: 12px; color: #aaa;">
                                     <i class="fa-solid fa-circle-info" style="color:var(--accent-gold);"></i> ${l.motivo || 'Día libre'}
@@ -137,7 +339,7 @@
         }
 
         async function procesarClicDiaAdmin(fechaStr) {
-            const barbero_id = document.getElementById('select-barbero').value;
+            const barbero_id = adminState.selectedBarberoId;
             const mensaje = document.getElementById('mensaje-admin');
             mensaje.innerText = '';
             if (!fechaStr || !barbero_id) return;
@@ -145,8 +347,7 @@
             const estaBloqueado = adminState.bloqueos.includes(fechaStr);
 
             if (estaBloqueado) {
-                // ELIMINAR BLOQUEO
-                const confirmar = confirm(`¿Estás seguro de que deseas ELIMINAR la ausencia del día ${fechaStr}?`);
+                const confirmar = confirm(`¿Estás seguro de que deseas ELIMINAR tu ausencia del día ${fechaStr}?`);
                 if (!confirmar) return;
 
                 try {
@@ -158,22 +359,18 @@
                     
                     if (res.ok) {
                         mensaje.style.color = '#a3e635';
-                        mensaje.innerText = '✅ Día habilitado nuevamente: ' + fechaStr;
-                        cargarListaBloqueos();
-                        cargarBloqueosPorBarbero();
+                        mensaje.innerText = '✅ Tu día ha sido habilitado nuevamente: ' + fechaStr;
+                        actualizarTablas();
                     } else {
                         mensaje.style.color = '#ef4444';
                         mensaje.innerText = 'No se pudo eliminar el bloqueo.';
                     }
                 } catch (err) {
                     console.error('Error:', err);
-                    mensaje.style.color = '#ef4444';
-                    mensaje.innerText = 'Error de conexión.';
                 }
 
             } else {
-                // AGREGAR BLOQUEO CON HORAS
-                const confirmar = confirm(`¿Deseas BLOQUEAR el día ${fechaStr}?`);
+                const confirmar = confirm(`¿Deseas registrar una ausencia para el día ${fechaStr}?`);
                 if (!confirmar) return;
 
                 const esDiaCompleto = confirm(`¿La ausencia será por TODO EL DÍA?\n\n[Aceptar] = Día Completo\n[Cancelar] = Elegir rango de Horas`);
@@ -184,31 +381,28 @@
 
                 if (!esDiaCompleto) {
                     tipo = 'parcial';
-                    // Creamos el texto de la lista de horas para mostrarlo en el mensaje
                     const textoListaHoras = horasPosibles.join(" | ");
 
-                    // Pedimos hora de inicio
-                    let inputInicio = prompt(`HORA DE INICIO (Escribe exactamente como aparece en la lista):\n\n${textoListaHoras}\n\n`, "14:30");
+                    let inputInicio = prompt(`HORA DE INICIO:\n\n${textoListaHoras}\n\n`, "14:30");
                     if (!inputInicio) return;
                     hora_inicio = inputInicio.trim();
 
                     if (!horasPosibles.includes(hora_inicio)) {
-                        alert(`❌ ERROR: La hora "${hora_inicio}" no es válida. Debe ser exactamente igual a las opciones.`);
-                        return; // Cancela si escribió algo mal
+                        alert(`❌ HORA INVÁLIDA.`);
+                        return;
                     }
                     
-                    // Pedimos hora de fin
-                    let inputFin = prompt(`HORA DE FIN (Escribe exactamente como aparece en la lista):\n\n${textoListaHoras}\n\n`, "16:30");
+                    let inputFin = prompt(`HORA DE FIN:\n\n${textoListaHoras}\n\n`, "16:30");
                     if (!inputFin) return;
                     hora_fin = inputFin.trim();
 
                     if (!horasPosibles.includes(hora_fin)) {
-                        alert(`❌ ERROR: La hora "${hora_fin}" no es válida. Debe ser exactamente igual a las opciones.`);
-                        return; // Cancela si escribió algo mal
+                        alert(`❌ HORA INVÁLIDA.`);
+                        return;
                     }
                 }
 
-                let motivo = prompt("Ingresa el motivo (Ej: Vacaciones, Licencia, Descanso):", tipo === 'completo' ? "Día libre" : "Trámite");
+                let motivo = prompt("Ingresa el motivo de tu ausencia:", tipo === 'completo' ? "Día libre" : "Trámite");
                 if (motivo === null) return; 
 
                 try {
@@ -220,19 +414,21 @@
                     
                     if (res.ok) {
                         mensaje.style.color = '#a3e635';
-                        mensaje.innerText = '✅ Día bloqueado con éxito: ' + fechaStr;
-                        cargarListaBloqueos();
-                        cargarBloqueosPorBarbero(); 
+                        mensaje.innerText = '✅ Bloqueo guardado con éxito: ' + fechaStr;
+                        细腻ActualizarTablas();
                     } else {
                         mensaje.style.color = '#ef4444';
-                        mensaje.innerText = 'No se pudo bloquear la fecha.';
+                        mensaje.innerText = 'No se pudo guardar.';
                     }
                 } catch (err) {
                     console.error('Error:', err);
-                    mensaje.style.color = '#ef4444';
-                    mensaje.innerText = 'Error de conexión.';
                 }
             }
+        }
+
+        function actualizarTablas() {
+            cargarListaBloqueos();
+            cargarBloqueosPorBarbero();
         }
 
         function renderCalendarioAdmin() {

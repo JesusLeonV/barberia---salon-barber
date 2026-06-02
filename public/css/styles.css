@@ -12,13 +12,7 @@
     --border-subtle: #2a2d35;
     --transition: all 0.3s ease;
 }
-body {
-    background-color: var(--bg-body);
-    color: var(--text-primary);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-}
+
 * {
     margin: 0;
     padding: 0;
@@ -29,6 +23,9 @@ body {
 body {
     background-color: var(--bg-body);
     color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 /* ==========================================================================
@@ -40,17 +37,89 @@ body {
     padding: 18px 24px;
     width: 100%;
 }
+
 .nav-container {
     max-width: 1300px;
     margin: 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
 }
-.nav-brand { font-size: 16px; font-weight: 700; color: var(--text-primary); letter-spacing: 0.5px; }
-.nav-branch { color: var(--accent-gold); margin-left: 6px; font-size: 13px; font-weight: 400; }
-.nav-login { font-size: 13px; color: var(--text-secondary); cursor: pointer; transition: color 0.3s; }
-.nav-login:hover { color: var(--accent-gold); }
+
+.nav-brand {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.nav-branch {
+    color: var(--accent-gold);
+    font-size: 13px;
+    font-weight: 400;
+    margin-left: 0;
+}
+
+.nav-user-section,
+#nav-user-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    flex: 1;
+    min-width: 0;
+}
+
+.nav-user-section span,
+#nav-user-section span,
+.nav-user-section a,
+#nav-user-section a,
+.nav-user-section button,
+#nav-user-section button {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+#nav-user-section span,
+.nav-user-section span {
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+#nav-user-section a,
+.nav-user-section a,
+#nav-user-section button,
+.nav-user-section button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+#nav-user-section button:hover,
+#nav-user-section a:hover,
+.nav-user-section button:hover,
+.nav-user-section a:hover {
+    color: var(--accent-gold);
+    transform: translateY(-1px);
+}
+
+.nav-login {
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.3s;
+}
+.nav-login:hover { 
+    color: var(--accent-gold); 
+}
 
 /* ==========================================================================
    3. ESTRUCTURA PRINCIPAL Y HERO
@@ -84,6 +153,7 @@ body {
 /* Perfil e Info de la Barbería */
 .barber-meta-profile { margin-top: 20px; }
 .profile-header { display: flex; gap: 15px; align-items: center; margin-bottom: 15px; }
+
 .logo-box {
     width: 60px;
     height: 60px;
@@ -112,92 +182,116 @@ body {
 .info-item a { color: var(--accent-gold); text-decoration: none; }
 
 /* ==========================================================================
-   4. WIDGETS Y COMPONENTES (Equipo, Calendario, Buscador)
+   4. WIDGETS Y COMPONENTES (Calendario de Reservas)
    ========================================================================== */
-.team-widget {
-    margin-top: 25px;
-    padding: 15px;
-    background: var(--bg-surface);
-    border-radius: 12px;
-    border: 1px solid var(--border-subtle);
-    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+.cal-container { 
+    background: #0f1113; 
+    border-radius: 12px; 
+    padding: 16px; 
+    border: 1px solid var(--border-subtle); 
+    width: 100%; 
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
 }
-.team-widget h3 { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; font-weight: 700; }
-.team-avatars { display: flex; gap: 20px; }
-.member-avatar { display: flex; flex-direction: column; align-items: center; gap: 6px; transition: transform 0.3s; }
-.member-avatar:hover { transform: translateY(-3px); }
-.member-avatar img { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-subtle); }
-.member-avatar span { font-size: 12.5px; color: var(--text-primary); font-weight: 500; }
 
-/* Filas de Barberos Fijos */
-.barber-row {
-    display: flex;
-    align-items: center;
-    padding: 10px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-    cursor: pointer;
-    transition: background 0.2s;
-}
-.barber-row:hover { background: rgba(255,255,255,0.03); }
-.barber-row img {
-    width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    margin-right: 12px;
-    border: 1px solid var(--accent-gold);
-}
-.barber-info-simple { flex-grow: 1; }
-.barber-name { font-size: 14px; font-weight: 500; display: block; }
-.view-profile { font-size: 11px; color: var(--accent-gold); text-decoration: underline; }
-#widget-barberos-fijos { display: flex; flex-direction: column; width: 100%; }
-.detalle-oculto { width: 100%; background: rgba(0, 0, 0, 0.2); border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-
-/* Buscador e Items laterales */
-.interactive-search {
-    background: var(--bg-surface);
-    border: 1px solid var(--border-subtle);
+.cal-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    gap: 10px; 
+    margin-bottom: 15px; 
+    background: rgba(255, 255, 255, 0.02);
+    padding: 8px 12px;
     border-radius: 8px;
-    padding: 12px 15px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 20px;
-    transition: border-color 0.3s;
+    border: 1px solid rgba(255,255,255,0.03);
 }
-.interactive-search:focus-within { border-color: var(--accent-gold); }
-.interactive-search input { border: none; background: transparent; outline: none; width: 100%; color: white; font-size: 13.5px; }
-.interactive-search i { color: var(--text-secondary); }
 
-.nav-categories { list-style: none; }
-.nav-categories li {
-    padding: 12px 15px;
-    font-size: 13.5px;
-    color: var(--text-secondary);
-    cursor: pointer;
-    border-radius: 6px;
-    margin-bottom: 4px;
+.cal-header h3 { 
+    margin: 0; 
+    color: var(--accent-gold); 
+    font-weight: 700; 
+    text-transform: uppercase; 
+    text-align: center; 
+    width: 100%; 
+    font-size: 15px;
+    letter-spacing: 0.5px;
+}
+
+.cal-nav-btn { 
+    background: #1a1c22; 
+    border: 1px solid var(--border-subtle); 
+    color: var(--text-primary); 
+    padding: 8px 14px; 
+    border-radius: 6px; 
+    cursor: pointer; 
+    font-weight: bold;
+    transition: var(--transition);
+}
+.cal-nav-btn:hover { 
+    border-color: var(--accent-gold); 
+    color: var(--accent-gold); 
+    background: rgba(234, 179, 8, 0.05);
+}
+
+.cal-grid, #grid-calendario, #grid-admin-calendario { 
+    display: grid; 
+    grid-template-columns: repeat(7, 1fr); 
+    gap: 8px; 
+    margin-top: 10px; 
+}
+
+.cal-weekday { 
+    font-weight: 700; 
+    text-align: center; 
+    color: var(--text-secondary); 
+    padding: 6px 0; 
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.dia-celda, .cal-day { 
+    padding: 12px 4px; 
+    min-height: 46px; 
+    display: flex; 
+    flex-direction: column;
+    align-items: center; 
+    justify-content: center; 
+    text-align: center; 
+    cursor: pointer; 
+    border-radius: 8px; 
+    border: 1px solid var(--border-subtle); 
+    font-size: 14px; 
     font-weight: 600;
-    transition: all 0.3s;
-}
-.nav-categories li.active, .nav-categories li:hover {
-    background: var(--bg-surface);
-    color: var(--accent-gold);
-    border-left: 3px solid var(--accent-gold);
+    background: var(--bg-surface); 
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
 }
 
-/* Calendario */
-.cal-container { background: #0f1113; border-radius: 12px; padding: 12px; border: 1px solid var(--border-subtle); width: 100%; }
-.cal-header { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px; }
-.cal-header h3 { margin:0; color:var(--accent-gold); font-weight:700; text-transform: lowercase; text-align:center; width:100%; }
-.cal-nav-btn { background: transparent; border: 1px solid var(--border-subtle); color: var(--text-secondary); padding:6px 10px; border-radius:6px; cursor:pointer; }
-.cal-nav-btn:hover { border-color: var(--accent-gold); color: var(--accent-gold); }
-.cal-grid, #grid-calendario, #grid-admin-calendario { display: grid; grid-template-columns: repeat(7, 1fr); gap:8px; margin-top: 6px; }
-.dia-celda, .cal-day { padding: 12px 8px; min-height: 42px; display:flex; align-items:center; justify-content:center; text-align:center; cursor: pointer; border-radius:8px; border: 1px solid var(--border-subtle); font-size: 14px; background: var(--bg-surface); transition: all 0.18s ease; }
-.cal-weekday { font-weight:700; text-align:center; color: var(--text-secondary); padding:6px 0; }
-.dia-celda.disabled, .cal-day.disabled { opacity: 0.45; cursor: not-allowed; background: #111216; color: #8b5a5a; border-style: dashed; }
-.dia-celda:hover:not(.disabled), .cal-day:hover:not(.disabled) { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,0.45); border-color: rgba(234,179,8,0.25); background: rgba(234,179,8,0.06); }
-.dia-celda.selected, .cal-day.selected { background: var(--accent-gold); color: #000; border-color: var(--accent-gold); box-shadow: 0 8px 30px rgba(234,179,8,0.15); }
-.dia-celda.small { padding:8px; min-height:34px; font-size:13px; }
+.dia-celda:not(.disabled) {
+    background: #1a1c22;
+    border-color: #2a2d35;
+    color: #ffffff;
+}
+
+.dia-celda.disabled, .cal-day.disabled { 
+    opacity: 1 !important; 
+    background: #2a1a1a !important; 
+    color: #f87171 !important; 
+    border: 1px solid #7f1d1d !important;
+    position: relative;
+    cursor: not-allowed;
+}
+.dia-celda.disabled::after {
+    content: '🔒';
+    position: absolute;
+    bottom: 2px;
+    font-size: 9px;
+}
+
+.dia-celda:hover:not(.disabled), .cal-day:hover:not(.disabled) { 
+    transform: translateY(-2px); 
+    box-shadow: 0 6px 15px rgba(234, 179, 8, 0.15); 
+    border-color: var(--accent-gold); 
+    background: rgba(234, 179, 8, 0.04); 
+}
 
 /* ==========================================================================
    5. WORKSPACE DE RESERVAS (Accordions, Cards y Selectores)
@@ -217,6 +311,7 @@ body {
     margin-bottom: 12px;
     overflow: hidden;
 }
+
 .accordion-header {
     width: 100%;
     display: flex;
@@ -241,7 +336,6 @@ body {
     background: var(--bg-body);
 }
 
-/* Tarjetas de Servicio y Barbero */
 .service-card, .barber-card {
     border: 1px solid var(--border-subtle);
     border-radius: 8px;
@@ -259,12 +353,10 @@ body {
 
 .service-card:hover, .barber-card:hover {
     transform: translateY(-4px);
-    box-sizing: border-box;
     border-color: var(--accent-gold) !important;
     box-shadow: 0 8px 25px rgba(0,0,0,0.4);
 }
 
-/* Horas y Botones */
 .time-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .time-btn { 
     padding: 12px; 
@@ -283,7 +375,6 @@ body {
 }
 .time-btn.selected { background: var(--accent-gold); color: #000; border-color: var(--accent-gold); box-shadow: 0 4px 12px rgba(234, 179, 8, 0.3); }
 
-/* Formularios y Botones de Envíos */
 .form-group input { 
     padding: 12px; 
     border-radius: 6px; 
@@ -360,7 +451,7 @@ body {
 .animate-step { animation: fadeUp 0.5s ease-out forwards; }
 
 /* ==========================================================================
-   7. FOOTER (Parche de aislamiento absoluto)
+   7. FOOTER (Aislamiento absoluto)
    ========================================================================== */
 .site-footer {
     display: block !important;
@@ -377,11 +468,6 @@ body {
     z-index: 1;
 }
 
-.site-footer footer, .site-footer {
-    display: block;
-}
-
-/* Forzamos que las columnas se queden en línea pase lo que pase con los padres */
 .footer-container {
     max-width: 1300px;
     margin: 0 auto;
@@ -401,7 +487,7 @@ body {
     margin-bottom: 40px;
     padding-right: 20px;
     box-sizing: border-box;
-    display: block !important; /* Evita que herede herencias extrañas */
+    display: block !important; 
 }
 
 .footer-column h3 {
@@ -434,7 +520,6 @@ body {
 .footer-column ul li {
     margin-bottom: 12px;
     color: var(--text-secondary);
-    list-style: none !important;
 }
 
 .footer-column ul li a {
@@ -492,38 +577,115 @@ body {
 }
 .footer-bottom p { margin: 0; font-size: 13px; color: #555555; }
 
-/* Asegurar responsividad */
-@media (max-width: 900px) {
-    .footer-container { flex-direction: row !important; }
-    .footer-column { flex: auto !important; width: 50% !important; }
-}
+/* ==========================================================================
+8. MEDIA QUERIES (Responsividad Global)
+========================================================================== */
 
-@media (max-width: 500px) {
-    .footer-column { width: 100% !important; padding-right: 0; }
+@media (max-width: 900px) {
+    /* 1. REPARACIÓN DEL NAVBAR (MENÚ SUPERIOR) */
+    .navbar {
+        padding: 15px 10px !important;
+    }
+    .nav-container {
+        flex-direction: column !important; /* Apila el logo arriba y el login abajo */
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 12px !important;
+    }
+    .nav-brand {
+        text-align: center !important;
+        align-items: center !important;
+    }
+    .nav-user-section, #nav-user-section {
+        justify-content: center !important;
+        width: 100% !important;
+        margin-top: 5px !important;
+    }
+
+    /* 2. REPARACIÓN DEL BANNER (IMAGEN APLASTADA) */
+    .hero-grid {
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+    }
+    .main-banner {
+        width: 100% !important;
+        height: 220px !important; /* Le damos una altura fija ideal para celulares */
+        border-radius: 8px !important;
+        overflow: hidden !important;
+    }
+    .img-fluid {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important; /* MAGIA: Esto recorta los bordes sobrantes sin aplastar la imagen */
+        object-position: center !important; /* Centra el recorte en la parte más importante de la foto */
+        display: block !important;
+    }
+
+    /* Ajustes generales de la grilla para que respire */
+    .main-wrapper {
+        margin: 15px auto !important;
+        padding: 0 16px !important;
+    }
+    .booking-layout {
+        grid-template-columns: 1fr !important;
+        gap: 20px !important;
+    }
+    .booking-sidebar { display: none !important; }
 }
 
 /* ==========================================================================
-   8. MEDIA QUERIES (Responsividad Global)
+   9. OPTIMIZACIÓN EXCLUSIVA PARA EL PANEL DE ADMINISTRACIÓN / BARBEROS
    ========================================================================== */
-@media (max-width: 900px) {
-    .hero-grid, .booking-layout { grid-template-columns: 1fr; gap: 20px; }
-    .booking-sidebar { display: none; }
-    .main-wrapper { margin: 15px auto; padding: 0 16px; }
-    .time-grid { grid-template-columns: repeat(3, 1fr); }
-    .cal-grid, #grid-calendario, #grid-admin-calendario { gap:6px; }
-    .dia-celda, .cal-day { padding: 10px; min-height: 36px; font-size: 13px; }
-    .footer-column { flex: auto; width: 50%; } /* Ajuste de columnas en tablets */
+.admin-container {
+    max-width: 600px !important; 
+    width: 100%;
+    margin: 20px auto;
+    padding: 0 16px;
+    box-sizing: border-box;
 }
 
-@media (max-width: 768px) {
-    /* Corregido: Limitar la regla solo al panel de reserva para que no afecte al footer */
-    .booking-layout { flex-direction: column; }
-    .booking-sidebar, .booking-main-panel { width: 100%; }
-    .service-card { flex-direction: column; align-items: flex-start !important; gap: 15px; }
-    .barber-card { width: 100%; }
-    .time-grid { justify-content: center; }
+.bloqueo-item {
+    background: #14161d !important;
+    border: 1px solid #2a2d35 !important;
+    border-left: 4px solid var(--accent-gold) !important;
+    padding: 14px !important;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    transition: var(--transition);
+}
+.bloqueo-item:hover {
+    border-color: rgba(234, 179, 8, 0.4) !important;
+    border-left-width: 6px !important;
 }
 
-@media (max-width: 500px) {
-    .footer-column { width: 100%; padding-right: 0; } /* Un elemento por fila en celular */
+@media (max-width: 600px) {
+    .admin-container {
+        margin: 10px auto;
+        padding: 0 12px;
+    }
+    .card {
+        padding: 16px !important;
+        border-radius: 10px !important;
+    }
+    .cal-grid, #grid-admin-calendario {
+        gap: 5px !important; 
+    }
+    .dia-celda {
+        min-height: 40px !important;
+        font-size: 13px !important;
+        border-radius: 6px !important;
+        padding: 8px 2px !important;
+    }
+    .bloqueo-item {
+        flex-direction: column !important;
+        gap: 8px;
+    }
+    .date-badge {
+        text-align: left !important;
+        font-size: 12px;
+        background: rgba(234, 179, 8, 0.1);
+        padding: 4px 8px;
+        border-radius: 4px;
+        display: inline-block;
+    }
 }

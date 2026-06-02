@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Agenda - The Salon Barber</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background-color: #111;
+            color: #fff;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #F1C40F;
+            padding-bottom: 15px;
+        }
+        .header h1 { color: #F1C40F; margin: 0; font-size: 24px; text-transform: uppercase; }
+        .btn-back {
+            display: inline-block;
+            margin: 16px auto 0;
+            padding: 10px 18px;
+            background: #F1C40F;
+            color: #111;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            text-decoration: none;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+        .btn-back:hover {
+            transform: translateY(-1px);
+            background: #ffd54f;
+        }
+        .selector-box {
+            background: #1a1a1a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #2d2d2d;
+            text-align: center;
+        }
+        select {
+            background: #222;
+            color: #fff;
+            border: 1px solid #F1C40F;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            width: 80%;
+            max-width: 300px;
+        }
+        .grid-citas {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        @media(min-width: 768px) { .grid-citas { grid-template-columns: repeat(2, 1fr); } }
+        
+        /* Tarjeta única para cada reserva */
+        .cita-card {
+            background: #141414;
+            border: 1px solid #2d2d2d;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            position: relative;
+        }
+        .cita-card.confirmada { border-left: 5px solid #F1C40F; }
+        .cita-card.asistio { border-left: 5px solid #2ae056; opacity: 0.7; }
+        .cita-card.cancelada { border-left: 5px solid #ef4444; opacity: 0.5; }
+        .cita-card.no_llego { border-left: 5px solid #94a3b8; opacity: 0.5; }
+
+        .info-cliente h3 { margin: 0 0 10px 0; font-size: 18px; color: #fff; }
+        .info-cliente p { margin: 5px 0; font-size: 14px; color: #cbd5e0; }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            float: right;
+        }
+        .badge.confirmada { background: #3b2f00; color: #F1C40F; }
+        .badge.asistio { background: #052e16; color: #2ae056; }
+        .badge.cancelada { background: #450a0a; color: #f87171; }
+        .badge.no_llego { background: #1e293b; color: #94a3b8; }
+
+        .actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid #2d2d2d;
+            padding-top: 15px;
+        }
+        .btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            text-align: center;
+            transition: 0.2s;
+        }
+        .btn-success { background-color: #2ae056; color: #000; }
+        .btn-danger { background-color: #ef4444; color: #fff; }
+        .btn-missing { background-color: #4b5563; color: #fff; }
+        .btn:hover { transform: scale(1.02); }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Control de Agenda 💈</h1>
+        <a href="/" class="btn-back">← Volver al Menú</a>
+    </div>
+
+    <div class="selector-box">
+        <h2 id="saludoBarbero" style="margin: 0; font-size: 18px; color: #fff;">Cargando tu perfil...</h2>
+    </div>
+
+    <div class="grid-citas" id="contenedorCitas">
+        <p style="text-align: center; color: #718096; width: 100%;">Selecciona un profesional para ver sus turnos únicos.</p>
+    </div>
+
+<script>
+    let barberoLogueadoId = null;
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        // 1. Verificar la sesión del LocalStorage
+        const usuarioStr = localStorage.getItem('usuario');
+        if (!usuarioStr) {
+            alert("No tienes permiso para ver esta sección. Inicia sesión.");
+            window.location.href = '/';
+            return;
+        }
+
+        const usuario = JSON.parse(usuarioStr);
+
+        // 2. Seguridad: Si es un cliente común, lo pateamos al index
+        if (usuario.role !== 'barbero' && usuario.rol !== 'barbero') {
+            alert("Acceso exclusivo para barberos profesionales.");
+            window.location.href = '/';
+            return;
+        }
+
+        // 3. Consultar la API interna para obtener el ID de este barbero usando su correo logueado
+        try {
+            const res = await fetch('/api/barberos');
+            const barberos = await res.json();
+
+            // Buscamos cuál fila de la tabla coincide con el barbero_id o email de la sesión activa
+            const barberoEncontrado = usuario.barbero_id
+                ? barberos.find(b => b.id === usuario.barbero_id)
+                : barberos.find(b => b.email?.toLowerCase() === usuario.email?.toLowerCase());
+
+            if (barberoEncontrado) {
+                barberoLogueadoId = barberoEncontrado.id;
+
+                // Cambiamos el texto de la pantalla con su nombre real
+                document.getElementById('saludoBarbero').innerHTML = `💈 Agenda de: <span style="color: #F1C40F;">${barberoEncontrado.nombre}</span>`;
+
+                // Cargamos de inmediato sus citas únicas
+                cargarCitas(barberoLogueadoId);
+            } else {
+                document.getElementById('saludoBarbero').textContent = "Error: Perfil de barbero no vinculado.";
+            }
+        } catch (err) {
+            console.error(err);
+            document.getElementById('saludoBarbero').textContent = "Error al conectar con la base de datos.";
+        }
+    });
+
+    // Traer las reservas del barbero de forma aislada
+    async function cargarCitas(barberoId) {
+        const contenedor = document.getElementById('contenedorCitas');
+        contenedor.innerHTML = '<p style="text-align:center; color:#718096;">Cargando tus turnos del día...</p>';
+
+        try {
+            const res = await fetch(`/api/barbero/citas/${barberoId}`);
+            const citas = await res.json();
+
+            if(citas.length === 0) {
+                contenedor.innerHTML = '<p style="text-align:center; color:#718096; width:100%;">No tienes citas registradas en tu agenda.</p>';
+                return;
+            }
+
+            contenedor.innerHTML = '';
+            citas.forEach(cita => {
+                const fechaObj = new Date(cita.fecha);
+                const fechaFormateada = fechaObj.toLocaleDateString('es-CL', { timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric' });
+
+                const card = document.createElement('div');
+                card.className = `cita-card ${cita.estado}`;
+                card.innerHTML = `
+                    <span class="badge ${cita.estado}">${cita.estado.replace('_', ' ')}</span>
+                    <div class="info-cliente">
+                        <h3>${cita.cliente_nombre}</h3>
+                        <p>📅 <b>Fecha:</b> ${fechaFormateada}</p>
+                        <p>⏰ <b>Hora:</b> ${cita.hora.substring(0,5)} Hrs</p>
+                        <p>📞 <b>Teléfono:</b> ${cita.cliente_telefono}</p>
+                        <p>✉️ <b>Correo:</b> ${cita.cliente_correo || 'No registrado'}</p>
+                    </div>
+
+                    ${cita.estado === 'confirmada' ? `
+                        <div class="actions">
+                            <button class="btn btn-success" onclick="actualizarEstado(${cita.id}, 'asistio', ${barberoId})">Atendido ✅</button>
+                            <button class="btn btn-danger" onclick="actualizarEstado(${cita.id}, 'cancelada', ${barberoId})">Cancelar ❌</button>
+                            <button class="btn btn-missing" onclick="actualizarEstado(${cita.id}, 'no_llego', ${barberoId})">Faltó 👤</button>
+                        </div>
+                    ` : ''}
+                `;
+                contenedor.appendChild(card);
+            });
+        } catch (err) {
+            contenedor.innerHTML = '<p style="text-align:center; color:#ef4444; width:100%;">Error al conectar con el servidor de la barbería.</p>';
+        }
+    }
+
+    // Actualizar estados
+    async function actualizarEstado(citaId, nuevoEstado, barberoId) {
+        let mensajeConfirmacion = `¿Estás seguro de cambiar el estado de la cita a ${nuevoEstado}?`;
+        if (nuevoEstado === 'cancelada') mensajeConfirmacion = "⚠️ ¿Quieres CANCELAR el turno? Esto liberará el horario en la web inmediatamente.";
+
+        if(!confirm(mensajeConfirmacion)) return;
+
+        const res = await fetch('/api/citas/cambiar-estado', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cita_id: citaId, nuevo_estado: nuevoEstado })
+       });
+       const data = await res.json();
+
+       if(data.success) {
+           cargarCitas(barberoId);
+       } else {
+           alert('No se pudo actualizar el estado de la cita.');
+       }
+   }
+</script>
+</body>
+</html>
