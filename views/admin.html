@@ -200,6 +200,15 @@
             
             <div style="background: #111; padding: 16px; border-radius: 8px; border: 1px solid #2d2d2d; margin-bottom: 18px; text-align: center;">
                 <p id="subtitulo-perfil" style="margin:0; font-size: 16px; color: #cbd5e1;">Identificando perfil profesional...</p>
+                <div id="control-gestiones" style="margin-top: 16px;
+                    display: flex;
+                    flex-wrap: wrap;
+                    justify-content: center;
+                    gap: 10px;
+                    align-items: center;
+                    font-size: 13px;
+                    color: #cbd5e1;
+                "></div>
             </div>
             
             <p style="font-size:15px; color:#cbd5e1; margin-top:10px; text-align: center;">
@@ -231,8 +240,8 @@
         };
 
         const horasPosibles = [
-            "10:30", "11:10", "11:50", "12:30", "13:10", "13:50", "14:30", "15:10", 
-            "15:50", "16:30", "17:10", "17:50", "18:30", "19:10", "19:50", "20:30"
+            "10:30", "11:30", "12:30", "13:30", "14:30", 
+            "15:30", "16:30", "17:30", "18:30", "19:30", "20:30", "21:30"
         ];
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -252,7 +261,8 @@
 
             const usuario = JSON.parse(usuarioStr);
 
-            if (usuario.rol !== 'barbero') {
+            const rolUsuario = String(usuario.rol || usuario.role || '').toLowerCase();
+            if (rolUsuario !== 'barbero') {
                 alert("Acceso denegado. Área reservada para personal.");
                 window.location.href = '/';
                 return;
@@ -262,22 +272,60 @@
                 // Buscamos los barberos para emparejar el ID mediante barbero_id o email
                 const res = await fetch('/api/barberos');
                 const barberos = await res.json();
-                
-                const barberoEncontrado = usuario.barbero_id
-                    ? barberos.find(b => b.id === usuario.barbero_id)
-                    : barberos.find(b => b.email?.toLowerCase() === usuario.email?.toLowerCase());
+
+                const usuarioEmail = normalizeString(usuario.email || usuario.correo || usuario.mail || '');
+                const usuarioId = usuario.id;
+                const usuarioBarberoId = usuario.barbero_id || usuario.barberoId;
+                const usuarioNombre = normalizeString(usuario.nombre || '');
+                const correoLocal = usuarioEmail.split('@')[0];
+
+                let barberoEncontrado = null;
+
+                if (usuarioBarberoId) {
+                    barberoEncontrado = barberos.find(b => String(b.id) === String(usuarioBarberoId) || String(b.barbero_id) === String(usuarioBarberoId));
+                }
+
+                if (!barberoEncontrado && usuarioEmail) {
+                    barberoEncontrado = barberos.find(b => normalizeString(b.email || b.correo || b.mail || '') === usuarioEmail);
+                }
+
+                if (!barberoEncontrado && usuarioId) {
+                    barberoEncontrado = barberos.find(b => String(b.usuario_id) === String(usuarioId));
+                }
+
+                if (!barberoEncontrado && usuarioNombre) {
+                    barberoEncontrado = barberos.find(b => normalizeString(b.nombre || '').includes(usuarioNombre.split(' ')[0]));
+                }
+
+                if (!barberoEncontrado && correoLocal) {
+                    barberoEncontrado = barberos.find(b => {
+                        const nombreNormalizado = normalizeString(b.nombre || '');
+                        const emailNormalizado = normalizeString(b.email || b.correo || b.mail || '');
+                        return nombreNormalizado.includes(correoLocal) || emailNormalizado.includes(correoLocal);
+                    });
+                }
+
+                if (!barberoEncontrado && usuarioNombre) {
+                    const palabrasUsuario = usuarioNombre.split(' ').filter(Boolean);
+                    barberoEncontrado = barberos.find(b => {
+                        const nombreNormalizado = normalizeString(b.nombre || '');
+                        return palabrasUsuario.some(p => nombreNormalizado.includes(p));
+                    });
+                }
 
                 if (barberoEncontrado) {
                     adminState.selectedBarberoId = barberoEncontrado.id;
-                    
-                    // Modificamos el DOM fijando su identidad en vez de usar el selector select-barbero
+                    adminState.selectedBarberoNombre = barberoEncontrado.nombre;
+
                     document.getElementById('titulo-admin-autenticado').innerHTML = `Ausencias de <span style="color:white;">${barberoEncontrado.nombre}</span> 💈`;
-                    document.getElementById('subtitulo-perfil').innerHTML = `Conectado como: <b>${usuario.email}</b>`;
+                    document.getElementById('subtitulo-perfil').innerHTML = `Conectado como: <b>${usuario.email || 'Sin correo registrado'}</b>`;
                     
-                    // Carga su ecosistema único
+                    renderControlHorario(barberoEncontrado);
+                    
                     cargarListaBloqueos();
                     cargarBloqueosPorBarbero();
                 } else {
+                    console.warn('Barbero no encontrado automáticamente', { usuario, barberos });
                     document.getElementById('subtitulo-perfil').innerHTML = `<span style="color:#ef4444;">Error: Correo no asignado a ningún barbero.</span>`;
                 }
             } catch (err) {
@@ -292,7 +340,11 @@
                 const contenedor = document.getElementById('lista-bloqueos');
                 
                 // Filtramos la lista global para que el barbero SOLO vea sus propias ausencias programadas
-                const susBloqueos = bloqueos.filter(b => parseInt(b.barbero_id || b.id) === parseInt(adminState.selectedBarberoId) || b.barbero_nombre === document.getElementById('titulo-admin-autenticado').innerText.split(' de ')[1].split(' 💈')[0]);
+                const selectedName = adminState.selectedBarberoNombre?.toLowerCase();
+                const susBloqueos = bloqueos.filter(b => {
+                    const nombreBloqueo = String(b.barbero_nombre || '').toLowerCase();
+                    return nombreBloqueo === selectedName;
+                });
 
                 if (!susBloqueos || susBloqueos.length === 0) {
                     contenedor.innerHTML = '<p style="color:#555; text-align:center;">No registras días bloqueados actualmente</p>';
@@ -336,6 +388,15 @@
             } catch (err) {
                 console.error('Error cargando bloqueos por barbero:', err);
             }
+        }
+
+        function normalizeString(value) {
+            return String(value || '')
+                .normalize('NFD')
+                .replace(/\p{Diacritic}/gu, '')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .toLowerCase();
         }
 
         async function procesarClicDiaAdmin(fechaStr) {
@@ -415,7 +476,7 @@
                     if (res.ok) {
                         mensaje.style.color = '#a3e635';
                         mensaje.innerText = '✅ Bloqueo guardado con éxito: ' + fechaStr;
-                        细腻ActualizarTablas();
+                        actualizarTablas();
                     } else {
                         mensaje.style.color = '#ef4444';
                         mensaje.innerText = 'No se pudo guardar.';
@@ -429,6 +490,53 @@
         function actualizarTablas() {
             cargarListaBloqueos();
             cargarBloqueosPorBarbero();
+        }
+
+        function renderControlHorario(barbero) {
+            const panel = document.getElementById('control-gestiones');
+            if (!panel) return;
+
+            const estadoActual = Number(barbero.estado_horario || 0);
+            const etiqueta = estadoActual === 0 ? 'Bloqueo Hoy' : estadoActual === 1 ? 'Horario Parcial 16:30-21:30' : 'Tiempo completo';
+
+            panel.innerHTML = `
+                <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:10px; width:100%;">
+                    <button onclick="cambiarEstadoHorario(${barbero.id}, 0)" style="padding:10px 14px; border-radius:8px; background:#111; border:1px solid #2d2d2d; color:white; cursor:pointer;">Bloquear Hoy</button>
+                    <button onclick="cambiarEstadoHorario(${barbero.id}, 1)" style="padding:10px 14px; border-radius:8px; background:#111; border:1px solid #2d2d2d; color:white; cursor:pointer;">Horario Parcial (16:30-21:30)</button>
+                    <button onclick="cambiarEstadoHorario(${barbero.id}, 2)" style="padding:10px 14px; border-radius:8px; background:#111; border:1px solid #2d2d2d; color:white; cursor:pointer;">Tiempo Completo</button>
+                </div>
+                <div style="width:100%; margin-top: 10px; color:#9ca3af; font-size:13px;">Estado actual: <strong style="color:#f8f32b;">${etiqueta}</strong></div>
+            `;
+        }
+
+        async function cambiarEstadoHorario(id, estado) {
+            const mensaje = document.getElementById('mensaje-admin');
+            mensaje.style.color = '#cbd5e1';
+            mensaje.innerText = 'Actualizando horario...';
+
+            try {
+                const res = await fetch(`/api/barberos/horario/${id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ estado })
+                });
+
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.error || 'Error al actualizar horario');
+                }
+
+                mensaje.style.color = '#a3e635';
+                mensaje.innerText = '✅ Horario actualizado correctamente.';
+                const barberoRes = await fetch(`/api/barbero/${id}`);
+                const barbero = await barberoRes.json();
+                renderControlHorario(barbero);
+                actualizarTablas();
+            } catch (err) {
+                console.error(err);
+                mensaje.style.color = '#ef4444';
+                mensaje.innerText = err.message || 'No se pudo actualizar horario.';
+            }
         }
 
         function renderCalendarioAdmin() {

@@ -119,10 +119,10 @@
                 <div id="paso-horario" class="hidden animate-step" style="margin-top: 30px;">
                     <h3 style="font-size:16px; margin-bottom:15px; color:var(--accent-gold);">3. ELIGE DÍA Y HORA DE ATENCIÓN:</h3>
                     
-                    <div style="display:flex; gap:25px; align-items:flex-start; flex-wrap:wrap;">
+                    <div class="horario-flex">
                         
-                        <div style="flex:1; min-width:320px; background:var(--bg-surface); padding:20px; border-radius:12px; border:1px solid var(--border-subtle);">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                        <div class="horario-panel calendario-panel">
+                            <div class="calendario-header">
                                 <button onclick="cambiarMesIndex(-1)" style="background:transparent; border:none; color:var(--accent-gold); font-size:20px; cursor:pointer;">◀</button>
                                 <h3 id="mes-titulo" style="color:var(--accent-gold); margin:0; text-transform:capitalize; font-size:18px;">Mes</h3>
                                 <button onclick="cambiarMesIndex(1)" style="background:transparent; border:none; color:var(--accent-gold); font-size:20px; cursor:pointer;">▶</button>
@@ -132,7 +132,7 @@
                                 </div>
                         </div>
                         
-                        <div style="flex:1; min-width:250px;">
+                        <div class="horario-panel horarios-lista">
                             <h4 style="color:white; margin-bottom:15px;">Horarios Disponibles</h4>
                             <div id="contenedor-horas" class="time-grid">
                                 <p style="color:#999;">Selecciona una fecha en el calendario...</p>
@@ -160,10 +160,12 @@
             <div class="auth-tabs">
                 <button class="auth-tab active" id="tab-login">Ingresar</button>
                 <button class="auth-tab" id="tab-registro">Crear Cuenta</button>
+                <button class="auth-tab" id="tab-recuperar">Recuperar</button>
             </div>
             <form id="form-login" class="auth-form">
                 <input type="email" id="login-email" class="input-glow" placeholder="Correo electrónico" required>
                 <input type="password" id="login-password" class="input-glow" placeholder="Contraseña" required>
+                <a href="#" onclick="event.preventDefault(); document.getElementById('tab-recuperar').click();" style="font-size:12px; color:var(--accent-gold); text-decoration:none;">¿Olvidaste tu contraseña?</a>
                 <button type="submit" class="btn-submit">Entrar</button>
             </form>
             <form id="form-registro" class="auth-form hidden">
@@ -172,6 +174,11 @@
                 <input type="email" id="reg-email" class="input-glow" placeholder="Correo electrónico" required>
                 <input type="password" id="reg-password" class="input-glow" placeholder="Contraseña" required>
                 <button type="submit" class="btn-submit">Registrarme</button>
+            </form>
+            <form id="form-recuperar" class="auth-form hidden">
+                <input type="email" id="recuperar-email" class="input-glow" placeholder="Correo registrado" required>
+                <button type="submit" class="btn-submit">Enviar código</button>
+                <p style="font-size:12px; color:#999; text-align:center; margin-top:10px;">Te enviaremos un correo con un código para recuperar tu contraseña</p>
             </form>
             <div id="auth-msg" style="text-align:center; margin-top:15px; font-size:13px;"></div>
         </div>
@@ -186,6 +193,7 @@
             cargarEquipo();
             cargarServicios();
             configurarModal();
+            configurarCookies();
             configurarTabs();
             configurarFormularios();
             configurarBuscador();
@@ -204,31 +212,66 @@
             });
         }
 
+        function configurarCookies() {
+            const banner = document.getElementById('cookies-banner');
+            const btnAceptar = document.getElementById('btn-aceptar-cookies');
+            const btnRechazar = document.getElementById('btn-rechazar-cookies');
+            
+            if (!banner) return;
+            
+            // Verificar si ya fue aceptado/rechazado
+            const cookiesAceptadas = localStorage.getItem('cookies-aceptadas');
+            if (cookiesAceptadas) {
+                banner.classList.add('hidden');
+            }
+            
+            if (btnAceptar) {
+                btnAceptar.addEventListener('click', () => {
+                    localStorage.setItem('cookies-aceptadas', 'true');
+                    banner.classList.add('hidden');
+                    console.log('Cookies aceptadas');
+                });
+            }
+            
+            if (btnRechazar) {
+                btnRechazar.addEventListener('click', () => {
+                    localStorage.setItem('cookies-aceptadas', 'false');
+                    banner.classList.add('hidden');
+                    console.log('Cookies rechazadas');
+                });
+            }
+        }
+
         function configurarTabs() {
             const tabLogin = document.getElementById('tab-login');
             const tabRegistro = document.getElementById('tab-registro');
+            const tabRecuperar = document.getElementById('tab-recuperar');
             const formLogin = document.getElementById('form-login');
             const formRegistro = document.getElementById('form-registro');
+            const formRecuperar = document.getElementById('form-recuperar');
+            
             if (!tabLogin || !tabRegistro || !formLogin || !formRegistro) return;
-            tabLogin.addEventListener('click', () => {
-                tabLogin.classList.add('active');
-                tabRegistro.classList.remove('active');
-                formLogin.classList.remove('hidden');
-                formRegistro.classList.add('hidden');
-            });
-            tabRegistro.addEventListener('click', () => {
-                tabRegistro.classList.add('active');
-                tabLogin.classList.remove('active');
-                formRegistro.classList.remove('hidden');
-                formLogin.classList.add('hidden');
-            });
+            
+            const mostrarTab = (tabActivo, formActivo) => {
+                [tabLogin, tabRegistro, tabRecuperar].forEach(t => t?.classList.remove('active'));
+                [formLogin, formRegistro, formRecuperar].forEach(f => f?.classList.add('hidden'));
+                tabActivo.classList.add('active');
+                formActivo.classList.remove('hidden');
+            };
+            
+            tabLogin.addEventListener('click', () => mostrarTab(tabLogin, formLogin));
+            tabRegistro.addEventListener('click', () => mostrarTab(tabRegistro, formRegistro));
+            tabRecuperar.addEventListener('click', () => mostrarTab(tabRecuperar, formRecuperar));
         }
 
         function configurarFormularios() {
             const formLogin = document.getElementById('form-login');
             const formRegistro = document.getElementById('form-registro');
+            const formRecuperar = document.getElementById('form-recuperar');
+            
             if (formLogin) formLogin.addEventListener('submit', async (e) => { e.preventDefault(); await enviarLogin(); });
             if (formRegistro) formRegistro.addEventListener('submit', async (e) => { e.preventDefault(); await enviarRegistro(); });
+            if (formRecuperar) formRecuperar.addEventListener('submit', async (e) => { e.preventDefault(); await enviarSolicitudReset(e); });
         }
 
         function configurarBuscador() {
@@ -395,6 +438,46 @@
             }
         }
 
+        async function enviarSolicitudReset(event) {
+            const email = document.getElementById('recuperar-email').value.trim();
+            const msg = document.getElementById('auth-msg');
+            if (!msg) return;
+            
+            if (!email) {
+                msg.style.color = '#ef4444';
+                msg.innerText = 'Ingresa tu correo';
+                return;
+            }
+            
+            const btn = event?.target ? event.target.querySelector('button[type="submit"]') : document.querySelector('#form-recuperar button[type="submit"]');
+            const textoOriginal = btn ? btn.innerHTML : '';
+            if (btn) { btn.innerHTML = 'Enviando...'; btn.disabled = true; }
+            
+            try {
+                const res = await fetch('/api/solicitar-reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    msg.style.color = '#28a745';
+                    msg.innerText = data.message || 'Se envió un correo con tu código.';
+                    document.getElementById('form-recuperar').reset();
+                } else {
+                    msg.style.color = '#ef4444';
+                    msg.innerText = data.error || 'Correo no encontrado.';
+                }
+            } catch (err) {
+                console.error('Error:', err);
+                msg.style.color = '#ef4444';
+                msg.innerText = 'Error de conexión.';
+            } finally {
+                if (btn) { btn.innerHTML = textoOriginal; btn.disabled = false; }
+            }
+        }
+
         function verificarSesion() {
     const usuarioStr = localStorage.getItem('usuario');
     const userSection = document.getElementById('nav-user-section');
@@ -428,50 +511,59 @@
             window.location.reload();
         }
         //EQUIPOS
-        async function cargarEquipo() {
+async function cargarEquipo() {
     try {
         const res = await fetch('/api/barberos');
         const barberos = await res.json();
         const container = document.getElementById('widget-barberos-fijos');
         if (!container) return;
 
+        // Limpiamos el contenedor pero guardamos la referencia
         container.style.display = 'flex';
         container.style.flexDirection = 'column';
-        container.innerHTML = '';
+        container.innerHTML = ''; 
+
+        // 1. Añadimos el encabezado como un DIV independiente, no con innerHTML del container
+        const header = document.createElement('div');
+        header.style.cssText = "padding: 10px 15px; font-size: 12px; color: #aaa; border-bottom: 1px solid #333; margin-bottom: 5px;";
+        header.innerHTML = "Te invitamos a que conozcas a nuestro equipo y selecciones uno para ver su perfil y experiencia de cada uno.";
+        container.appendChild(header);
 
         barberos.forEach(b => {
-            // 1. Lógica inteligente para la foto
-            // Convierte el nombre a minúsculas y elimina espacios (ej: "Alexis Barbero" -> "alexisbarbero.png")
             const nombreLimpio = b.nombre.toLowerCase().replace(/\s+/g, '');
             const rutaImagen = b.foto_url ? `/images/${b.foto_url}` : `/images/${nombreLimpio}.png`;
 
-            // 2. Fila principal con diseño profesional
             const div = document.createElement('div');
             div.className = 'barber-row'; 
+            div.style.cssText = "padding: 8px 15px; display: flex; align-items: center; cursor: pointer;";
+            
+            // IMPORTANTE: Asegúrate de que toggleDetalle esté definida globalmente
             div.onclick = function() { toggleDetalle(this); };
 
             div.innerHTML = `
                 <img src="${rutaImagen}" 
                      alt="${b.nombre}" 
                      onerror="this.src='/images/default-avatar.png'"
-                     style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #F1C40F; margin-right: 15px; flex-shrink: 0;">
+                     style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #F1C40F; flex-shrink: 0;">
                 
-                <div class="barber-info-simple" style="display: flex; flex-direction: column; justify-content: center; gap: 2px;">
-                    <span class="barber-name" style="line-height: 1.2; font-weight: bold;">${b.nombre}</span>
-                    <span class="view-profile" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #888;">Ver perfil</span>
+                <div style="margin-left: 12px; display: flex; flex-direction: column; flex-grow: 1;">
+                    <span style="font-weight: bold; font-size: 14px; color: white;">${b.nombre}</span>
+                    <span style="font-size: 10px; color: #F1C40F; text-transform: uppercase;">Toca para ver perfil</span>
                 </div>
-                <i class="fa-solid fa-chevron-down icon-arrow" style="font-size: 10px; opacity: 0.5; transition: transform 0.3s; margin-left: auto;"></i>
+                <i class="fa-solid fa-chevron-down" style="font-size: 10px; opacity: 0.5;"></i>
             `;
             
-            // 3. Detalle oculto (bio y enlaces)
             const detalle = document.createElement('div');
             detalle.className = 'detalle-oculto';
-            detalle.style.display = 'none';
-            detalle.style.padding = '10px';
+            detalle.style.display = 'none'; // Asegúrate de que esto sea reconocido
+            detalle.style.padding = '5px 15px 15px 55px';
+            
             detalle.innerHTML = `
-                <p style="font-size: 12px; color: #aaa; margin-bottom: 10px;">${b.bio || 'Barbero profesional'}</p>
+                <p style="font-size: 12px; color: #ddd; margin-bottom: 12px; line-height: 1.4;">
+                    ${b.bio || 'Barbero profesional con pasión por el detalle y el estilo único.'}
+                </p>
                 <div style="display: flex; gap: 15px;">
-                    ${b.instagram ? `<a href="${b.instagram}" target="_blank" style="color: var(--accent-gold); font-size: 12px; text-decoration: none;"><i class="fa-brands fa-instagram"></i> Instagram</a>` : ''}
+                    ${b.instagram ? `<a href="${b.instagram}" target="_blank" style="color: #F1C40F; font-size: 12px; text-decoration: none;"><i class="fa-brands fa-instagram"></i> Instagram</a>` : ''}
                     ${b.whatsapp ? `<a href="https://wa.me/${b.whatsapp}" target="_blank" style="color: #25d366; font-size: 12px; text-decoration: none;"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>` : ''}
                 </div>
             `;
@@ -526,15 +618,15 @@
                         const precio = Number(s.precio).toLocaleString('es-CL');
                         const duracion = s.duracion_minutos || '';
                         const desc = s.descripcion || '';
-                        return '<div class="service-card" id="servicio-' + s.id + '" style="display:flex; justify-content:space-between; align-items:center; padding:15px; border:1px solid var(--border-subtle); border-radius:8px;">' +
-                            '<div>' +
+                        return '<div class="service-card" id="servicio-' + s.id + '" style="display:flex; justify-content:space-between; align-items:flex-start; padding:15px; border:1px solid var(--border-subtle); border-radius:8px; gap:20px;">' +
+                            '<div style="flex:1; min-width:0;">' +
                                 '<h4 style="margin:0 0 5px 0; font-size:15px;">' + s.nombre + '</h4>' +
                                 '<div class="service-meta" style="font-size:12px; color:#666;"><i class="fa-regular fa-clock"></i> ' + duracion + ' min</div>' +
                                 '<p class="service-desc" style="font-size:13px; margin:5px 0;">' + desc + '</p>' +
                             '</div>' +
-                            '<div style="text-align:right;">' +
+                            '<div class="service-card-actions">' +
                                 '<div class="service-price" style="font-weight:bold; color:var(--accent-gold); margin-bottom:10px;">$' + precio + '</div>' +
-                                '<button class="btn-book" onclick="seleccionarServicio(' + s.id + ')" style="padding:8px 15px; background:black; color:white; border:none; border-radius:5px; cursor:pointer;">Agendar</button>' +
+                                '<button class="btn-book" onclick="seleccionarServicio(' + s.id + ')" style="padding:10px 16px; background:black; color:white; border:none; border-radius:8px; cursor:pointer;">Agendar</button>' +
                             '</div>' +
                         '</div>';
                     }).join('');
@@ -599,10 +691,19 @@
                 if (!contenedor) return;
 
                 contenedor.innerHTML = barberos.map(b => {
-                    const foto = b.foto_url || 'https://cdn-icons-png.flaticon.com/512/147/147144.png';
-                    const nombre = b.nombre.split(' ')[0];
+                    const defaultImage = 'https://cdn-icons-png.flaticon.com/512/147/147144.png';
+                    const nombreClave = (b.nombre || '').trim().split(' ')[0].toLowerCase();
+                    const imagenPorNombre = nombreClave ? `/images/${nombreClave}.png` : defaultImage;
+                    let foto = defaultImage;
+                    if (b.foto_url) {
+                        foto = b.foto_url.startsWith('http') ? b.foto_url : (b.foto_url.startsWith('/') ? b.foto_url : `/images/${b.foto_url}`);
+                    } else if (b.foto) {
+                        foto = b.foto.startsWith('http') ? b.foto : (b.foto.startsWith('/') ? b.foto : `/images/${b.foto}`);
+                    } else {
+                        foto = imagenPorNombre;
+                    }
                     return '<div class="barber-card" id="barber-' + b.id + '" onclick="seleccionarBarbero(' + b.id + ')" style="min-width:130px; text-align:center; padding:15px; background:var(--bg-surface); border-radius:12px; border:1px solid var(--border-subtle); cursor:pointer;">' +
-                        '<img src="' + foto + '" onerror="this.src=\'https://cdn-icons-png.flaticon.com/512/147/147144.png\'" alt="' + b.nombre + '" style="width:60px; height:60px; border-radius:50%; object-fit:cover; margin-bottom:8px;">' +
+                        '<img src="' + foto + '" onerror="this.src=\'' + defaultImage + '\'" alt="' + b.nombre + '" style="width:60px; height:60px; border-radius:50%; object-fit:cover; margin-bottom:8px;">' +
                         '<h4 style="font-size:13px; color:var(--text-primary); font-weight:600; margin:0;">' + b.nombre + '</h4>' +
                         '<span style="font-size:11px; color:var(--accent-gold); display:block; margin-top:4px;">Seleccionar</span>' +
                     '</div>';
@@ -698,7 +799,6 @@
                 `;
             }
         }
-        // NUEVA FUNCIÓN PROFESIONAL (Cliente)
         // NUEVA FUNCIÓN PROFESIONAL (Cliente)
         async function inicializarCalendario(barbero_id) {
             const selectorFecha = document.getElementById('selector-fecha');
@@ -801,7 +901,7 @@
 
                 if (isPasado || isBloqueado) {
                     // Día no seleccionable
-                    html += `<div style="padding:10px 0; border-radius:8px; background:#1a1a1a; color:#555; cursor:not-allowed; font-size:14px;">${dia}</div>`;
+                    html += `<div class="cal-day disabled" style="padding:10px 0; border-radius:8px; background:#1a1a1a; color:#555; cursor:not-allowed; font-size:14px;">${dia}</div>`;
                 } else {
                     // Día disponible: usamos una función onclick limpia
                     html += `<div class="cal-day" data-fecha="${fechaStr}" style="padding:10px 0; border-radius:8px; background:#2a2a2a; border:1px solid var(--border-subtle); cursor:pointer; transition:all 0.3s ease;" onclick="seleccionarDiaEnGrid(this, '${fechaStr}')">${dia}</div>`;
@@ -809,6 +909,19 @@
             }
             
             grid.innerHTML = html;
+
+            // Seleccionar el día de hoy por defecto si está visible y disponible
+            const hoyHoy = new Date();
+            hoyHoy.setHours(0,0,0,0);
+            const mesHoy = hoyHoy.getMonth();
+            const anioHoy = hoyHoy.getFullYear();
+            if (anioHoy === anio && mesHoy === mes) {
+                const hoyStr = `${anioHoy}-${String(mesHoy + 1).padStart(2, '0')}-${String(hoyHoy.getDate()).padStart(2, '0')}`;
+                const hoyCelda = grid.querySelector(`.cal-day[data-fecha="${hoyStr}"]`);
+                if (hoyCelda && typeof hoyCelda.onclick === 'function') {
+                    seleccionarDiaEnGrid(hoyCelda, hoyStr);
+                }
+            }
         }
 
         function cambiarMesIndex(direccion) {
@@ -832,7 +945,21 @@
         }
         //PERFILES
 </script>
-    <footer class="site-footer">
+
+<!-- BANNER DE COOKIES -->
+<div id="cookies-banner" class="cookies-banner">
+    <div class="cookies-content">
+        <div style="flex: 1;">
+            <p style="margin: 0; font-size: 14px;">🍪 Usamos cookies para mejorar tu experiencia. Al continuar navegando, aceptas nuestro uso de cookies.</p>
+        </div>
+        <div class="cookies-buttons">
+            <button id="btn-aceptar-cookies" class="btn-aceptar-cookies">Aceptar</button>
+            <button id="btn-rechazar-cookies" class="btn-rechazar-cookies">Rechazar</button>
+        </div>
+    </div>
+</div>
+
+<footer class="site-footer">
         <div class="footer-container">
             <div class="footer-column">
                 <h3>The Salon Barber</h3>

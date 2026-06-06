@@ -4,6 +4,7 @@ const db = require('./db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
+const crypto = require('crypto');
 const app = express();
 const PORT = process.env.PORT || 3005;
 
@@ -25,6 +26,8 @@ app.use('/images', express.static(path.join(__dirname, 'public/images')));
 app.get('/terminos', (req, res) => res.sendFile(path.join(__dirname, 'views', 'terminos.html')));
 app.get('/privacidad', (req, res) => res.sendFile(path.join(__dirname, 'views', 'privacidad.html')));
 app.get('/cancelacion', (req, res) => res.sendFile(path.join(__dirname, 'views', 'cancelacion.html')));
+app.get('/reset-password', (req, res) => res.sendFile(path.join(__dirname, 'views', 'reset-password.html')));
+app.get('/reset-password.html', (req, res) => res.sendFile(path.join(__dirname, 'views', 'reset-password.html')));
 // RUTA PRINCIPAL
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'views', 'index.html')));
 // RUTA ADMIN
@@ -52,17 +55,31 @@ app.get('/api/disponibilidad', async (req, res) => {
     try {
         // 1. Revisamos si el barbero marcó ausencias en el panel Admin
         const [bloqueos] = await db.query('SELECT * FROM dias_bloqueados WHERE barbero_id = ? AND fecha = ?', [barbero_id, fecha]);
-        
+
         // Si el admin bloqueó el día COMPLETO, devolvemos vacío (cero horas)
         if (bloqueos.some(b => b.tipo === 'completo')) {
             return res.json([]);
         }
-        
+
+        // 2. Revisar estado_horario del barbero (permanente, no solo hoy)
+        const [barberoRows] = await db.query('SELECT estado_horario FROM barberos WHERE id = ?', [barbero_id]);
+        const estadoHorario = Number(barberoRows[0]?.estado_horario);
+
         // Todas las horas de un día normal de trabajo
-        const horasPosibles = ["10:30", "11:10", "11:50", "12:30", "13:10", "13:50", "14:30", "15:10", "15:50", "16:30", "17:10", "17:50", "18:30", "19:10", "19:50", "20:30"];
+        const horasPosibles = ["10:30", "11:30", "12:30", "13:30", "14:30", "15:30", "16:30", "17:30", "18:30", "19:30", "20:30", "21:30"];
         let horasFiltradas = [...horasPosibles];
-        
-        // 2. Si el bloqueo es PARCIAL, descontamos esas horas
+
+        // estado_horario === 0 => Bloqueado completamente (no trabaja)
+        if (estadoHorario === 0) {
+            return res.json([]);
+        }
+        // estado_horario === 1 => Horario parcial permanente: solo 16:30-21:30
+        if (estadoHorario === 1) {
+            horasFiltradas = horasFiltradas.filter(h => parseInt(h.replace(':', '')) >= 1630);
+        }
+        // estado_horario === 2 o no definido => Horario completo (todas las horas)
+
+        // 3. Si el bloqueo es PARCIAL, descontamos esas horas
         bloqueos.forEach(b => {
             if (b.tipo === 'parcial' && b.hora_inicio && b.hora_fin) {
                 const inicio = parseInt(b.hora_inicio.replace(':', '')); // ej: "14:30" -> 1430
@@ -76,15 +93,15 @@ app.get('/api/disponibilidad', async (req, res) => {
             }
         });
 
-        // 3. Revisamos qué horas YA FUERON RESERVADAS por otros clientes (Evita choques)
+        // 4. Revisamos qué horas YA FUERON RESERVADAS por otros clientes (Evita choques)
         const [citasOcupadas] = await db.query('SELECT hora FROM citas WHERE barbero_id = ? AND fecha = ?', [barbero_id, fecha]);
         const horasReservadas = citasOcupadas.map(cita => cita.hora.substring(0, 5));
-        
+
         // Devolvemos las horas limpias (sin el permiso parcial y sin las citas de otros)
         res.json(horasFiltradas.filter(hora => !horasReservadas.includes(hora)));
-    } catch (error) { 
+    } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Error' }); 
+        res.status(500).json({ error: 'Error' });
     }
 });
 
@@ -308,7 +325,14 @@ app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
     try {
         const [rows] = await db.query('SELECT * FROM usuarios WHERE email = ?', [email]);
-        if (rows.length === 0 || !(await bcrypt.compare(password, rows[0].password))) {
+        if (rows.length === 0) {
+            console.warn('Login fallido: usuario no encontrado para email=', email);
+            return res.status(401).json({ success: false, error: 'Correo o contraseña incorrectos.' });
+        }
+
+        const match = await bcrypt.compare(password, rows[0].password);
+        if (!match) {
+            console.warn('Login fallido: contraseña incorrecta para user_id=', rows[0].id, 'email=', email);
             return res.status(401).json({ success: false, error: 'Correo o contraseña incorrectos.' });
         }
         res.json({ 
@@ -343,6 +367,18 @@ app.get('/api/barbero/:id', async (req, res) => {
     } catch (error) { res.status(500).json({ error: 'Error interno' }); }
 });
 
+app.post('/api/barberos/horario/:id', async (req, res) => {
+    const { estado } = req.body;
+    const { id } = req.params;
+    try {
+        await db.query('UPDATE barberos SET estado_horario = ? WHERE id = ?', [estado, id]);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error al actualizar horario:', error);
+        res.status(500).json({ error: 'Error al actualizar horario' });
+    }
+});
+
 // ELIMINAR UN BLOQUEO
 app.delete('/api/bloquear-dia', async (req, res) => {
     const { barbero_id, fecha } = req.body;
@@ -353,5 +389,143 @@ app.delete('/api/bloquear-dia', async (req, res) => {
 });
 
 app.get('/perfil/:id', (req, res) => res.sendFile(path.join(__dirname, 'views', 'perfil.html')));
+
+// RECUPERACIÓN DE CONTRASEÑA
+app.post('/api/solicitar-reset-password', async (req, res) => {
+    const { email } = req.body;
+    try {
+        const [rows] = await db.query('SELECT id, nombre FROM usuarios WHERE email = ?', [email]);
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'El correo no está registrado.' });
+        }
+
+        // Generar token único
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const tokenHash = await bcrypt.hash(resetToken, await bcrypt.genSalt(10));
+        const expiresAt = new Date(Date.now() + 3600000); // 1 hora
+
+        // Guardar token en la BD
+        await db.query(
+            'UPDATE usuarios SET reset_token = ?, reset_expires = ? WHERE id = ?',
+            [tokenHash, expiresAt, rows[0].id]
+        );
+
+        // Enviar correo
+        const resetLink = `${process.env.BASE_URL || 'http://localhost:3005'}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
+        
+        const mailOptions = {
+            from: 'thesalonbarberagenda@gmail.com',
+            to: email,
+            subject: 'Recuperar contraseña - The Salon Barber',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f5f5f5; padding: 20px; border-radius: 8px;">
+                    <div style="background: white; padding: 30px; border-radius: 8px; text-align: center;">
+                        <h2 style="color: #eab308; margin-bottom: 20px;">The Salon Barber</h2>
+                        <p style="font-size: 16px; color: #333; margin-bottom: 20px;">
+                            Hola <strong>${rows[0].nombre}</strong>,
+                        </p>
+                        <p style="font-size: 14px; color: #666; margin-bottom: 20px;">
+                            Recibimos una solicitud para recuperar tu contraseña. 
+                            Si no fuiste tú, ignora este correo.
+                        </p>
+                        <div style="background: #eab308; color: black; padding: 15px; border-radius: 6px; margin: 20px 0; font-size: 18px; font-weight: bold; letter-spacing: 2px;">
+                            ${resetToken}
+                        </div>
+                        <p style="font-size: 14px; color: #666; margin-bottom: 20px;">
+                            <strong>Pasos para recuperar tu contraseña:</strong><br>
+                            1. Copia el código anterior<br>
+                            2. Ve a la página de recuperación de contraseña<br>
+                            3. Pega el código y tu nuevo correo (si aplica)<br>
+                            4. Ingresa tu nueva contraseña<br>
+                            5. Haz clic en "Cambiar contraseña"<br>
+                            <br>
+                            <strong>⏰ Este código expira en 1 hora</strong>
+                        </p>
+                        <a href="${resetLink}" style="display: inline-block; background: #eab308; color: black; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-bottom: 20px;">
+                            Cambiar contraseña
+                        </a>
+                        <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+                        <p style="font-size: 12px; color: #999;">
+                            Si tienes problemas, contacta a soporte en thesalonbarberagenda@gmail.com
+                        </p>
+                    </div>
+                </div>
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
+        res.json({ success: true, message: 'Se envió un correo con instrucciones de recuperación.' });
+    } catch (error) {
+        console.error('Error al solicitar reset:', error);
+        res.status(500).json({ success: false, error: 'Error al procesar la solicitud.' });
+    }
+});
+
+// VALIDAR TOKEN DE RESET
+app.post('/api/validar-token-reset', async (req, res) => {
+    const { email, token } = req.body;
+    try {
+        const [rows] = await db.query('SELECT id, reset_token, reset_expires FROM usuarios WHERE email = ?', [email]);
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Usuario no encontrado.' });
+        }
+
+        const user = rows[0];
+        
+        // Validar expiración
+        if (!user.reset_expires || new Date() > new Date(user.reset_expires)) {
+            return res.status(400).json({ success: false, error: 'El token ha expirado. Solicita uno nuevo.' });
+        }
+
+        // Validar token
+        if (!user.reset_token || !await bcrypt.compare(token, user.reset_token)) {
+            return res.status(400).json({ success: false, error: 'Token inválido.' });
+        }
+
+        res.json({ success: true, message: 'Token válido.' });
+    } catch (error) {
+        console.error('Error al validar token:', error);
+        res.status(500).json({ success: false, error: 'Error al validar el token.' });
+    }
+});
+
+// CAMBIAR CONTRASEÑA CON RESET TOKEN
+app.post('/api/cambiar-password-reset', async (req, res) => {
+    const { email, token, newPassword } = req.body;
+    try {
+        if (!newPassword || newPassword.length < 6) {
+            return res.status(400).json({ success: false, error: 'La contraseña debe tener al menos 6 caracteres.' });
+        }
+
+        const [rows] = await db.query('SELECT id, reset_token, reset_expires FROM usuarios WHERE email = ?', [email]);
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Usuario no encontrado.' });
+        }
+
+        const user = rows[0];
+
+        // Validar expiración
+        if (!user.reset_expires || new Date() > new Date(user.reset_expires)) {
+            return res.status(400).json({ success: false, error: 'El token ha expirado. Solicita uno nuevo.' });
+        }
+
+        // Validar token
+        if (!user.reset_token || !await bcrypt.compare(token, user.reset_token)) {
+            return res.status(400).json({ success: false, error: 'Token inválido.' });
+        }
+
+        // Cambiar contraseña
+        const hash = await bcrypt.hash(newPassword, await bcrypt.genSalt(10));
+        await db.query(
+            'UPDATE usuarios SET password = ?, reset_token = NULL, reset_expires = NULL WHERE id = ?',
+            [hash, user.id]
+        );
+
+        res.json({ success: true, message: 'Contraseña cambiada exitosamente.' });
+    } catch (error) {
+        console.error('Error al cambiar contraseña:', error);
+        res.status(500).json({ success: false, error: 'Error al cambiar la contraseña.' });
+    }
+});
 
 app.listen(3005, '0.0.0.0', () => console.log('Servidor escuchando en puerto 3005'));

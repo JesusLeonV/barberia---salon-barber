@@ -84,7 +84,6 @@
             font-size: 11px;
             font-weight: bold;
             text-transform: uppercase;
-            float: right;
         }
         .badge.confirmada { background: #3b2f00; color: #F1C40F; }
         .badge.asistio { background: #052e16; color: #2ae056; }
@@ -145,7 +144,8 @@
         const usuario = JSON.parse(usuarioStr);
 
         // 2. Seguridad: Si es un cliente común, lo pateamos al index
-        if (usuario.role !== 'barbero' && usuario.rol !== 'barbero') {
+        const rolUsuario = String(usuario.rol || usuario.role || '').toLowerCase();
+        if (rolUsuario !== 'barbero') {
             alert("Acceso exclusivo para barberos profesionales.");
             window.location.href = '/';
             return;
@@ -157,19 +157,52 @@
             const barberos = await res.json();
 
             // Buscamos cuál fila de la tabla coincide con el barbero_id o email de la sesión activa
-            const barberoEncontrado = usuario.barbero_id
-                ? barberos.find(b => b.id === usuario.barbero_id)
-                : barberos.find(b => b.email?.toLowerCase() === usuario.email?.toLowerCase());
+            const usuarioEmail = normalizeString(usuario.email || usuario.correo || usuario.mail || '');
+            const usuarioId = usuario.id;
+            const usuarioBarberoId = usuario.barbero_id || usuario.barberoId;
+            const usuarioNombre = normalizeString(usuario.nombre || '');
+
+            let barberoEncontrado = null;
+
+            if (usuarioBarberoId) {
+                barberoEncontrado = barberos.find(b => String(b.id) === String(usuarioBarberoId) || String(b.barbero_id) === String(usuarioBarberoId));
+            }
+
+            if (!barberoEncontrado && usuarioEmail) {
+                barberoEncontrado = barberos.find(b => normalizeString(b.email || b.correo || b.mail || '') === usuarioEmail);
+            }
+
+            if (!barberoEncontrado && usuarioId) {
+                barberoEncontrado = barberos.find(b => String(b.usuario_id) === String(usuarioId));
+            }
+
+            if (!barberoEncontrado && usuarioNombre) {
+                barberoEncontrado = barberos.find(b => normalizeString(b.nombre || '').includes(usuarioNombre.split(' ')[0]));
+            }
+
+            const correoLocal = usuarioEmail.split('@')[0];
+            if (!barberoEncontrado && correoLocal) {
+                barberoEncontrado = barberos.find(b => {
+                    const nombreNormalizado = normalizeString(b.nombre || '');
+                    const emailNormalizado = normalizeString(b.email || b.correo || b.mail || '');
+                    return nombreNormalizado.includes(correoLocal) || emailNormalizado.includes(correoLocal);
+                });
+            }
+
+            if (!barberoEncontrado && usuarioNombre) {
+                const palabrasUsuario = usuarioNombre.split(' ').filter(Boolean);
+                barberoEncontrado = barberos.find(b => {
+                    const nombreNormalizado = normalizeString(b.nombre || '');
+                    return palabrasUsuario.some(p => nombreNormalizado.includes(p));
+                });
+            }
 
             if (barberoEncontrado) {
                 barberoLogueadoId = barberoEncontrado.id;
-
-                // Cambiamos el texto de la pantalla con su nombre real
                 document.getElementById('saludoBarbero').innerHTML = `💈 Agenda de: <span style="color: #F1C40F;">${barberoEncontrado.nombre}</span>`;
-
-                // Cargamos de inmediato sus citas únicas
                 cargarCitas(barberoLogueadoId);
             } else {
+                console.warn('Barbero no encontrado automáticamente', { usuario, barberos });
                 document.getElementById('saludoBarbero').textContent = "Error: Perfil de barbero no vinculado.";
             }
         } catch (err) {
@@ -177,6 +210,15 @@
             document.getElementById('saludoBarbero').textContent = "Error al conectar con la base de datos.";
         }
     });
+
+function normalizeString(value) {
+            return String(value || '')
+                .normalize('NFD')
+                .replace(/\p{Diacritic}/gu, '')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .toLowerCase();
+    }
 
     // Traer las reservas del barbero de forma aislada
     async function cargarCitas(barberoId) {
