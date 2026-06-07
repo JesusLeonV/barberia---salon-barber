@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+    <link rel="icon" type="image/png" href="/images/logobarber.png">
 <style>
     /* FORZAR RESPONSIVIDAD DESDE EL HTML PARA EVITAR CACHÉ */
     @media (max-width: 900px) {
@@ -64,7 +65,7 @@
         <section class="hero-grid">
             <div class="hero-left-col">
                 <div class="main-banner">
-                    <img src="/images/barberia.png" alt="Interior @the_salonbarber" class="img-fluid" onerror="this.style.display='none'">
+                    <img src="/images/barberia.png" alt="Interior the_salonbarber" class="img-fluid" onerror="this.style.display='none'">
                 </div>
                 <div class="barber-meta-profile">
                     <div class="profile-header">
@@ -76,7 +77,7 @@
                             <div class="stars-row">💡 <span class="rating-text">"Nosotros el corte y tú el estilo"</span></div>
                         </div>
                     </div>
-                    <p class="business-description">Bienvenidos a @the_salonbarber. Ofrecemos el mejor ambiente urbano de Iquique enfocado en el cuidado de tu imagen. Especialistas en cortes modernos, clásicos, perfilado de cejas y cuidado completo de barba con las mejores herramientas y profesionales de la región.</p>
+                    <p class="business-description">Bienvenidos a the salon barber. Ofrecemos el mejor ambiente urbano de Iquique enfocado en el cuidado de tu imagen. Especialistas en cortes modernos, clásicos, perfilado de cejas y cuidado completo de barba con las mejores herramientas y profesionales de la región.</p>
                 </div>
             </div>
             <div class="hero-right-col">
@@ -553,6 +554,7 @@ async function cargarEquipo() {
                 <i class="fa-solid fa-chevron-down" style="font-size: 10px; opacity: 0.5;"></i>
             `;
             
+            const whatsappPhone = b.whatsapp ? b.whatsapp.replace(/\D/g, '') : '';
             const detalle = document.createElement('div');
             detalle.className = 'detalle-oculto';
             detalle.style.display = 'none'; // Asegúrate de que esto sea reconocido
@@ -563,8 +565,8 @@ async function cargarEquipo() {
                     ${b.bio || 'Barbero profesional con pasión por el detalle y el estilo único.'}
                 </p>
                 <div style="display: flex; gap: 15px;">
-                    ${b.instagram ? `<a href="${b.instagram}" target="_blank" style="color: #F1C40F; font-size: 12px; text-decoration: none;"><i class="fa-brands fa-instagram"></i> Instagram</a>` : ''}
-                    ${b.whatsapp ? `<a href="https://wa.me/${b.whatsapp}" target="_blank" style="color: #25d366; font-size: 12px; text-decoration: none;"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>` : ''}
+                    ${b.instagram ? `<a href="${b.instagram}" target="_blank" rel="noopener noreferrer" style="color: #F1C40F; font-size: 12px; text-decoration: none;"><i class="fa-brands fa-instagram"></i> Instagram</a>` : ''}
+                    ${whatsappPhone ? `<a href="https://wa.me/${whatsappPhone}" target="_blank" rel="noopener noreferrer" style="color: #25d366; font-size: 12px; text-decoration: none;"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>` : ''}
                 </div>
             `;
 

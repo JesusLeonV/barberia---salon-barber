@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Agenda - The Salon Barber</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="/images/logobarber.png">
+
     <style>
         body {
             margin: 0;
@@ -58,6 +60,39 @@
             display: grid;
             grid-template-columns: 1fr;
             gap: 15px;
+        }
+        .nuevo-turno {
+            background: #141414;
+            border: 1px solid #2d2d2d;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+        .form-grid input,
+        .form-grid select {
+            background: #0f0f0f;
+            color: #fff;
+            border: 1px solid #2d2d2d;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 14px;
+        }
+        .form-grid input:focus,
+        .form-grid select:focus {
+            outline: 2px solid #F1C40F;
+        }
+        .form-grid select {
+            appearance: none;
+        }
+        @media(max-width: 640px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
         }
         @media(min-width: 768px) { .grid-citas { grid-template-columns: repeat(2, 1fr); } }
         
@@ -123,6 +158,9 @@
 
     <div class="selector-box">
         <h2 id="saludoBarbero" style="margin: 0; font-size: 18px; color: #fff;">Cargando tu perfil...</h2>
+    </div>
+
+
     </div>
 
     <div class="grid-citas" id="contenedorCitas">
@@ -201,6 +239,7 @@
                 barberoLogueadoId = barberoEncontrado.id;
                 document.getElementById('saludoBarbero').innerHTML = `💈 Agenda de: <span style="color: #F1C40F;">${barberoEncontrado.nombre}</span>`;
                 cargarCitas(barberoLogueadoId);
+                cargarServiciosTurnos();
             } else {
                 console.warn('Barbero no encontrado automáticamente', { usuario, barberos });
                 document.getElementById('saludoBarbero').textContent = "Error: Perfil de barbero no vinculado.";
@@ -220,72 +259,97 @@ function normalizeString(value) {
                 .toLowerCase();
     }
 
-    // Traer las reservas del barbero de forma aislada
-    async function cargarCitas(barberoId) {
-        const contenedor = document.getElementById('contenedorCitas');
-        contenedor.innerHTML = '<p style="text-align:center; color:#718096;">Cargando tus turnos del día...</p>';
+async function cargarCitas(barberoId) {
+            const contenedor = document.getElementById('contenedorCitas');
+            contenedor.innerHTML = '<p style="text-align:center; color:#718096;">Cargando tus turnos...</p>';
+            try {
+                const res = await fetch(`/api/barbero/citas/${barberoId}`);
+                const citas = await res.json();
+                
+                if(citas.length === 0) {
+                    contenedor.innerHTML = '<p style="text-align:center; color:#718096; width:100%;">No tienes citas registradas.</p>';
+                    return;
+                }
+
+                contenedor.innerHTML = '';
+                citas.forEach(cita => {
+                    const card = document.createElement('div');
+                    card.className = `cita-card ${cita.estado}`;
+                    card.innerHTML = `
+                        <span class="badge ${cita.estado}">${cita.estado.replace('_', ' ')}</span>
+                        <div class="info-cliente">
+                            <h3>${cita.cliente_nombre}</h3>
+                            <p>📅 <b>Fecha:</b> ${cita.fecha.substring(0,10)}</p>
+                            <p>⏰ <b>Hora:</b> ${cita.hora.substring(0,5)}</p>
+                            <p>📞 <b>Teléfono:</b> ${cita.cliente_telefono}</p>
+                        </div>
+                        <div class="actions">
+                            ${cita.estado === 'confirmada' ? `
+                                <button class="btn btn-success" onclick="actualizarEstado(${cita.id}, 'asistio', ${barberoId})">Atendido ✅</button>
+                                <button class="btn btn-danger" onclick="actualizarEstado(${cita.id}, 'cancelada', ${barberoId})">Cancelar ❌</button>
+                                <button class="btn btn-missing" onclick="actualizarEstado(${cita.id}, 'no_llego', ${barberoId})">Faltó 👤</button>
+                            ` : ''}
+                            <button class="btn btn-danger" onclick="eliminarCita(${cita.id}, ${barberoId})">Eliminar 🗑️</button>
+                        </div>
+                    `;
+                    contenedor.appendChild(card);
+                });
+            } catch (err) { contenedor.innerHTML = '<p style="text-align:center; color:#ef4444;">Error al cargar.</p>'; }
+        }
+
+        async function actualizarEstado(citaId, nuevoEstado, barberoId) {
+            if(!confirm(`¿Marcar como ${nuevoEstado}?`)) return;
+            try {
+                const res = await fetch('/api/citas/cambiar-estado', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cita_id: citaId, nuevo_estado: nuevoEstado, barbero_id: barberoId })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    cargarCitas(barberoId);
+                } else {
+                    alert(data.error || 'Error al actualizar.');
+                }
+            } catch (e) { alert('Error de conexión'); }
+        }
+
+   async function eliminarCita(citaId, barberoId) {
+        if (!confirm('¿Eliminar esta cita? Esta acción no se puede deshacer.')) return;
 
         try {
-            const res = await fetch(`/api/barbero/citas/${barberoId}`);
-            const citas = await res.json();
-
-            if(citas.length === 0) {
-                contenedor.innerHTML = '<p style="text-align:center; color:#718096; width:100%;">No tienes citas registradas en tu agenda.</p>';
-                return;
+            const res = await fetch(`/api/citas/${citaId}?barbero_id=${barberoId}`, {
+                method: 'DELETE'
+            });
+            const data = await res.json();
+            if (data.success) {
+                cargarCitas(barberoId);
+            } else {
+                alert(data.error || 'No se pudo eliminar la cita.');
             }
+        } catch (err) {
+            console.error(err);
+            alert('Error de conexión al eliminar la cita.');
+        }
+   }
 
-            contenedor.innerHTML = '';
-            citas.forEach(cita => {
-                const fechaObj = new Date(cita.fecha);
-                const fechaFormateada = fechaObj.toLocaleDateString('es-CL', { timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric' });
-
-                const card = document.createElement('div');
-                card.className = `cita-card ${cita.estado}`;
-                card.innerHTML = `
-                    <span class="badge ${cita.estado}">${cita.estado.replace('_', ' ')}</span>
-                    <div class="info-cliente">
-                        <h3>${cita.cliente_nombre}</h3>
-                        <p>📅 <b>Fecha:</b> ${fechaFormateada}</p>
-                        <p>⏰ <b>Hora:</b> ${cita.hora.substring(0,5)} Hrs</p>
-                        <p>📞 <b>Teléfono:</b> ${cita.cliente_telefono}</p>
-                        <p>✉️ <b>Correo:</b> ${cita.cliente_correo || 'No registrado'}</p>
-                    </div>
-
-                    ${cita.estado === 'confirmada' ? `
-                        <div class="actions">
-                            <button class="btn btn-success" onclick="actualizarEstado(${cita.id}, 'asistio', ${barberoId})">Atendido ✅</button>
-                            <button class="btn btn-danger" onclick="actualizarEstado(${cita.id}, 'cancelada', ${barberoId})">Cancelar ❌</button>
-                            <button class="btn btn-missing" onclick="actualizarEstado(${cita.id}, 'no_llego', ${barberoId})">Faltó 👤</button>
-                        </div>
-                    ` : ''}
-                `;
-                contenedor.appendChild(card);
+   async function cargarServiciosTurnos() {
+        try {
+            const res = await fetch('/api/servicios');
+            const servicios = await res.json();
+            const select = document.getElementById('nuevo-servicio');
+            if (!select) return;
+            servicios.forEach(servicio => {
+                const option = document.createElement('option');
+                option.value = servicio.id;
+                option.textContent = servicio.nombre;
+                select.appendChild(option);
             });
         } catch (err) {
-            contenedor.innerHTML = '<p style="text-align:center; color:#ef4444; width:100%;">Error al conectar con el servidor de la barbería.</p>';
+            console.error('Error cargando servicios:', err);
         }
-    }
-
-    // Actualizar estados
-    async function actualizarEstado(citaId, nuevoEstado, barberoId) {
-        let mensajeConfirmacion = `¿Estás seguro de cambiar el estado de la cita a ${nuevoEstado}?`;
-        if (nuevoEstado === 'cancelada') mensajeConfirmacion = "⚠️ ¿Quieres CANCELAR el turno? Esto liberará el horario en la web inmediatamente.";
-
-        if(!confirm(mensajeConfirmacion)) return;
-
-        const res = await fetch('/api/citas/cambiar-estado', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cita_id: citaId, nuevo_estado: nuevoEstado })
-       });
-       const data = await res.json();
-
-       if(data.success) {
-           cargarCitas(barberoId);
-       } else {
-           alert('No se pudo actualizar el estado de la cita.');
-       }
    }
+
 </script>
 </body>
 </html>

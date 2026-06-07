@@ -51,57 +51,68 @@ app.get('/api/lista-bloqueos', async (req, res) => {
 
 // DISPONIBILIDAD (Calcula horas libres reales)
 app.get('/api/disponibilidad', async (req, res) => {
-    const { barbero_id, fecha } = req.query;
+    const { barbero_id, fecha } = req.query; // fecha viene como "YYYY-MM-DD"
     try {
-        // 1. Revisamos si el barbero marcó ausencias en el panel Admin
-        const [bloqueos] = await db.query('SELECT * FROM dias_bloqueados WHERE barbero_id = ? AND fecha = ?', [barbero_id, fecha]);
+        if (!barbero_id || !fecha) return res.status(400).json([]);
 
-        // Si el admin bloqueó el día COMPLETO, devolvemos vacío (cero horas)
-        if (bloqueos.some(b => b.tipo === 'completo')) {
-            return res.json([]);
-        }
+        const horasPosibles = [
+            "10:30", "11:30", "12:30", "13:30", "14:30",
+            "15:30", "16:30", "17:30", "18:30", "19:30", "20:30", "21:30"
+        ];
 
-        // 2. Revisar estado_horario del barbero (permanente, no solo hoy)
-        const [barberoRows] = await db.query('SELECT estado_horario FROM barberos WHERE id = ?', [barbero_id]);
-        const estadoHorario = Number(barberoRows[0]?.estado_horario);
+        // 1. Obtener estado del barbero
+        const [barbRows] = await db.query('SELECT estado_horario FROM barberos WHERE id = ?', [barbero_id]);
+        const estadoHorario = barbRows && barbRows.length ? Number(barbRows[0].estado_horario || 2) : 2;
+        if (estadoHorario === 0) return res.json([]);
 
-        // Todas las horas de un día normal de trabajo
-        const horasPosibles = ["10:30", "11:30", "12:30", "13:30", "14:30", "15:30", "16:30", "17:30", "18:30", "19:30", "20:30", "21:30"];
-        let horasFiltradas = [...horasPosibles];
+        let horasFiltradas = horasPosibles.slice();
 
-        // estado_horario === 0 => Bloqueado completamente (no trabaja)
-        if (estadoHorario === 0) {
-            return res.json([]);
-        }
-        // estado_horario === 1 => Horario parcial permanente: solo 16:30-21:30
+        // 2. Filtro Horario Parcial
         if (estadoHorario === 1) {
-            horasFiltradas = horasFiltradas.filter(h => parseInt(h.replace(':', '')) >= 1630);
+            const parcial = new Set(["16:30","17:30","18:30","19:30","20:30","21:30"]);
+            horasFiltradas = horasFiltradas.filter(h => parcial.has(h));
         }
-        // estado_horario === 2 o no definido => Horario completo (todas las horas)
 
-        // 3. Si el bloqueo es PARCIAL, descontamos esas horas
-        bloqueos.forEach(b => {
+        // 3. NUEVO: Filtrar horas pasadas SI la fecha es hoy
+        const hoy = new Date();
+        const fechaHoyStr = hoy.toISOString().split('T')[0]; // "2026-06-06"
+        
+        if (fecha === fechaHoyStr) {
+            const horaActual = hoy.getHours();
+            const minActual = hoy.getMinutes();
+            // Filtramos: solo dejamos horas > hora actual
+            horasFiltradas = horasFiltradas.filter(h => {
+                const [h_res, m_res] = h.split(':').map(Number);
+                return (h_res > horaActual) || (h_res === horaActual && m_res > minActual);
+            });
+        }
+
+        // 4. Aplicar bloqueos de la BD
+        const [bloqueos] = await db.query(
+            'SELECT tipo, hora_inicio, hora_fin FROM dias_bloqueados WHERE barbero_id = ? AND fecha = ?',
+            [barbero_id, fecha]
+        );
+
+        for (const b of bloqueos) {
+            if (b.tipo === 'completo') return res.json([]);
             if (b.tipo === 'parcial' && b.hora_inicio && b.hora_fin) {
-                const inicio = parseInt(b.hora_inicio.replace(':', '')); // ej: "14:30" -> 1430
-                const fin = parseInt(b.hora_fin.replace(':', ''));       // ej: "16:30" -> 1630
-                
-                horasFiltradas = horasFiltradas.filter(h => {
-                    const horaActual = parseInt(h.replace(':', ''));
-                    // Filtramos las horas que caen dentro del trámite del barbero
-                    return !(horaActual >= inicio && horaActual <= fin);
-                });
+                const inicio = b.hora_inicio.substring(0,5);
+                const fin = b.hora_fin.substring(0,5);
+                horasFiltradas = horasFiltradas.filter(h => !(h >= inicio && h <= fin));
             }
-        });
+        }
 
-        // 4. Revisamos qué horas YA FUERON RESERVADAS por otros clientes (Evita choques)
-        const [citasOcupadas] = await db.query('SELECT hora FROM citas WHERE barbero_id = ? AND fecha = ?', [barbero_id, fecha]);
-        const horasReservadas = citasOcupadas.map(cita => cita.hora.substring(0, 5));
+        // 5. Filtrar reservas existentes
+        const [citasOcupadas] = await db.query(
+            'SELECT hora FROM citas WHERE barbero_id = ? AND fecha = ? AND estado = "confirmada"',
+            [barbero_id, fecha]
+        );
+        const horasReservadas = citasOcupadas.map(cita => (cita.hora || '').substring(0, 5));
 
-        // Devolvemos las horas limpias (sin el permiso parcial y sin las citas de otros)
         res.json(horasFiltradas.filter(hora => !horasReservadas.includes(hora)));
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Error' });
+    } catch (error) { 
+        console.error("Error en disponibilidad:", error);
+        res.status(500).json({ error: error.message }); 
     }
 });
 
@@ -311,6 +322,58 @@ app.post('/api/citas', async (req, res) => {
     }
 });
 
+// CAMBIAR ESTADO DE UNA CITA
+app.post('/api/citas/cambiar-estado', async (req, res) => {
+    const { cita_id, nuevo_estado, barbero_id } = req.body;
+    
+    if (!cita_id || !nuevo_estado || !barbero_id) {
+        return res.status(400).json({ success: false, error: 'Faltan datos.' });
+    }
+
+    try {
+        // Ejecutamos la actualización
+        const [result] = await db.query(
+            'UPDATE citas SET estado = ? WHERE id = ? AND barbero_id = ?', 
+            [nuevo_estado, cita_id, barbero_id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ success: false, error: 'Cita no encontrada.' });
+        }
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error al cambiar estado:', error);
+        res.status(500).json({ success: false, error: 'Error interno en la BD: ' + error.message });
+    }
+});
+
+// ELIMINAR UNA CITA
+app.delete('/api/citas/:id', async (req, res) => {
+    const citaId = req.params.id;
+    const barberoId = req.query.barbero_id;
+
+    if (!citaId || !barberoId) {
+        return res.status(400).json({ success: false, error: 'Faltan parámetros para eliminar la cita.' });
+    }
+
+    try {
+        const [rows] = await db.query('SELECT barbero_id FROM citas WHERE id = ?', [citaId]);
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, error: 'Cita no encontrada.' });
+        }
+        if (String(rows[0].barbero_id) !== String(barberoId)) {
+            return res.status(403).json({ success: false, error: 'No tienes permiso para eliminar esta cita.' });
+        }
+
+        await db.query('DELETE FROM citas WHERE id = ?', [citaId]);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error al eliminar la cita:', error);
+        res.status(500).json({ success: false, error: 'Error interno al eliminar la cita.' });
+    }
+});
+
 // LOGIN Y REGISTRO
 app.post('/api/registro', async (req, res) => {
     const { nombre, telefono, email, password } = req.body;
@@ -399,65 +462,50 @@ app.post('/api/solicitar-reset-password', async (req, res) => {
             return res.status(404).json({ success: false, error: 'El correo no está registrado.' });
         }
 
-        // Generar token único
-        const resetToken = crypto.randomBytes(32).toString('hex');
+        // 1. Generar código de 6 dígitos
+        const resetToken = Math.floor(100000 + Math.random() * 900000).toString();
         const tokenHash = await bcrypt.hash(resetToken, await bcrypt.genSalt(10));
-        const expiresAt = new Date(Date.now() + 3600000); // 1 hora
+        const expiresAt = new Date(Date.now() + 3600000); 
 
-        // Guardar token en la BD
-        await db.query(
-            'UPDATE usuarios SET reset_token = ?, reset_expires = ? WHERE id = ?',
-            [tokenHash, expiresAt, rows[0].id]
-        );
+        await db.query('UPDATE usuarios SET reset_token = ?, reset_expires = ? WHERE id = ?', 
+            [tokenHash, expiresAt, rows[0].id]);
 
-        // Enviar correo
-        const resetLink = `${process.env.BASE_URL || 'http://localhost:3005'}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
+        // 2. URL de producción (asegura que el usuario llegue a tu web, no a localhost)
+        const baseUrl = 'https://www.thesalonbarber.cl';
+        const resetLink = `${baseUrl}/reset-password?email=${encodeURIComponent(email)}`;
         
         const mailOptions = {
-            from: 'thesalonbarberagenda@gmail.com',
+            from: '"The Salon Barber" <thesalonbarberagenda@gmail.com>',
             to: email,
-            subject: 'Recuperar contraseña - The Salon Barber',
+            subject: 'Código de recuperación - The Salon Barber',
             html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f5f5f5; padding: 20px; border-radius: 8px;">
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: #f5f5f5; border-radius: 8px;">
                     <div style="background: white; padding: 30px; border-radius: 8px; text-align: center;">
-                        <h2 style="color: #eab308; margin-bottom: 20px;">The Salon Barber</h2>
-                        <p style="font-size: 16px; color: #333; margin-bottom: 20px;">
-                            Hola <strong>${rows[0].nombre}</strong>,
-                        </p>
-                        <p style="font-size: 14px; color: #666; margin-bottom: 20px;">
-                            Recibimos una solicitud para recuperar tu contraseña. 
-                            Si no fuiste tú, ignora este correo.
-                        </p>
-                        <div style="background: #eab308; color: black; padding: 15px; border-radius: 6px; margin: 20px 0; font-size: 18px; font-weight: bold; letter-spacing: 2px;">
+                        <h2 style="color: #eab308;">The Salon Barber</h2>
+                        <p>Hola <strong>${rows[0].nombre}</strong>,</p>
+                        <p>Tu código de seguridad para recuperar la contraseña es:</p>
+                        
+                        <div style="font-size: 32px; font-weight: bold; color: #eab308; margin: 20px 0; letter-spacing: 5px;">
                             ${resetToken}
                         </div>
-                        <p style="font-size: 14px; color: #666; margin-bottom: 20px;">
-                            <strong>Pasos para recuperar tu contraseña:</strong><br>
-                            1. Copia el código anterior<br>
-                            2. Ve a la página de recuperación de contraseña<br>
-                            3. Pega el código y tu nuevo correo (si aplica)<br>
-                            4. Ingresa tu nueva contraseña<br>
-                            5. Haz clic en "Cambiar contraseña"<br>
-                            <br>
-                            <strong>⏰ Este código expira en 1 hora</strong>
-                        </p>
-                        <a href="${resetLink}" style="display: inline-block; background: #eab308; color: black; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; margin-bottom: 20px;">
-                            Cambiar contraseña
+                        
+                        <p>⏰ Este código expira en 1 hora.</p>
+
+                        <a href="${resetLink}" style="display: inline-block; background: #eab308; color: black; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0;">
+                            Ir a cambiar contraseña
                         </a>
-                        <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
-                        <p style="font-size: 12px; color: #999;">
-                            Si tienes problemas, contacta a soporte en thesalonbarberagenda@gmail.com
-                        </p>
+                        
+                        <p style="font-size: 12px; color: #666;">Si no solicitaste esto, ignora este correo.</p>
                     </div>
                 </div>
             `
         };
 
         await transporter.sendMail(mailOptions);
-        res.json({ success: true, message: 'Se envió un correo con instrucciones de recuperación.' });
+        res.json({ success: true, message: 'Código enviado.' });
     } catch (error) {
-        console.error('Error al solicitar reset:', error);
-        res.status(500).json({ success: false, error: 'Error al procesar la solicitud.' });
+        console.error('Error:', error);
+        res.status(500).json({ success: false, error: 'Error al procesar.' });
     }
 });
 
