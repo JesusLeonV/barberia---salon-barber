@@ -1,0 +1,60 @@
+/* Phone prefix alignment override */
+.close-modal { top: 16px !important; right: 16px !important; width: 34px !important; height: 34px !important; z-index: 20 !important; }
+.modal-content { padding-top: 46px !important; }
+
+.phone-wrapper {
+    width: 100% !important;
+    height: 46px !important;
+    display: flex !important;
+    align-items: stretch !important;
+    background: rgba(255,255,255,0.06) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    position: relative !important;
+}
+.phone-wrapper:focus-within {
+    border-color: var(--accent-gold) !important;
+    background: rgba(255,255,255,0.08) !important;
+    box-shadow: 0 0 0 3px rgba(212,175,55,0.12) !important;
+}
+.phone-prefix {
+    position: static !important;
+    transform: none !important;
+    width: 58px !important;
+    min-width: 58px !important;
+    height: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: var(--accent-gold) !important;
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    background: rgba(212,175,55,0.08) !important;
+    border-right: 1px solid rgba(212,175,55,0.18) !important;
+    pointer-events: none !important;
+    z-index: 1 !important;
+}
+.phone-wrapper input,
+.auth-form .phone-wrapper input {
+    flex: 1 !important;
+    width: auto !important;
+    min-width: 0 !important;
+    height: 46px !important;
+    padding: 0 14px !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+    color: #fff !important;
+}
+.phone-wrapper input:focus,
+.auth-form .phone-wrapper input:focus {
+    border: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}
+.phone-wrapper input::placeholder { color: rgba(255,255,255,0.35) !important; }

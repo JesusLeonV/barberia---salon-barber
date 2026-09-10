@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>The Salon Barber - Agenda</title>
+
+    <link rel="stylesheet" href="/css/styles.css?v=3">
+
+    <link rel="stylesheet" href="/css/phone-fix.css?v=5">
+    <link rel="stylesheet" href="/css/auth-modal-fix.css?v=2">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="icon" type="image/png" href="/images/logobarber.png">
+
+<style>
+
+    /* FORZAR RESPONSIVIDAD DESDE EL HTML PARA EVITAR CACHÉ */
+
+    @media (max-width: 900px) {
+
+        .navbar {
+
+            padding: 15px 10px !important;
+
+        }
+
+        .nav-container {
+
+            flex-direction: column !important;
+
+            align-items: center !important;
+
+            justify-content: center !important;
+
+            gap: 12px !important;
+
+        }
+
+        .nav-brand {
+
+            text-align: center !important;
+
+        }
+
+        .nav-user-section, #nav-user-section {
+
+            justify-content: center !important;
+
+            width: 100% !important;
+
+            margin-top: 5px !important;
+
+        }
+
+        .hero-grid {
+
+            grid-template-columns: 1fr !important;
+
+        }
+
+        .main-banner {
+
+            width: 100% !important;
+
+            height: 220px !important; 
+
+            border-radius: 8px !important;
+
+            overflow: hidden !important;
+
+            display: block !important;
+
+        }
+
+        .img-fluid {
+
+            width: 100% !important;
+
+            height: 100% !important;
+
+            object-fit: cover !important; 
+
+            object-position: center !important; 
+
+            display: block !important;
+
+        }
+
+    }
+
+</style>
+
+</head>
+
+<body>
+
+    <nav class="navbar">
+
+        <div class="nav-container">
+
+            <span class="nav-brand"><strong>The Salon Barber</strong> <span class="nav-branch">@the_salonbarber</span></span>
+
+            <div id="nav-user-section" class="nav-user-section"></div>
+
+        </div>
+
+    </nav>
+
+    <div class="main-wrapper">
+
+        <section class="hero-grid">
+
+            <div class="hero-left-col">
+
+                <div class="main-banner">
+
+                    <img src="/images/barberia.png" alt="Interior the_salonbarber" class="img-fluid" onerror="this.style.display='none'">
+
+                </div>
+
+                <div class="barber-meta-profile">
+
+                    <div class="profile-header">
+
+                        <div class="logo-box">
+
+                            <img src="/images/logobarber.png" alt="Logo" onerror="this.style.display='none'">
+
+                        </div>
+
+                        <div class="title-box">
+
+                            <h2>The Salon Barber</h2>
+
+                            <div class="stars-row">💡 <span class="rating-text">"Nosotros el corte y tú el estilo"</span></div>
+
+                        </div>
+
+                    </div>
+
+                    <p class="business-description">Bienvenidos a the salon barber. Ofrecemos el mejor ambiente urbano de Iquique enfocado en el cuidado de tu imagen. Especialistas en cortes modernos, clásicos, perfilado de cejas y cuidado completo de barba con las mejores herramientas y profesionales de la región.</p>
+
+                </div>
+
+            </div>
+
+            <div class="hero-right-col">
+
+                <div class="interactive-location-card">
+
+                    <div class="embedded-map">
+
+                        <iframe src="https://maps.google.com/maps?q=Av.%20la%20Tirana%203432,%20Iquique&t=&z=15&ie=UTF8&iwloc=&output=embed" width="100%" height="220" style="border:0; border-radius: 8px;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+
+                    </div>
+
+                    <div class="contact-details-list" style="margin-top: 15px;">
+
+                        <p class="info-item"><i class="fa-solid fa-location-dot"></i> Av. la Tirana 3432, 1113745 Iquique, Tarapacá</p>
+
+                        <p class="info-item"><i class="fa-regular fa-clock"></i> Lun a Sáb: 10:30 - 22:00 | Dom: 12:00 - 21:00</p>
+
+                    </div>
+
+                </div>
+
+                <div class="team-widget" style="margin-top: 25px; padding: 15px; background: var(--bg-surface); border-radius: 12px; border: 1px solid var(--border-subtle);">
+
+                    <h3 style="font-size: 16px; margin-bottom: 15px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 10px;">Nuestro Equipo</h3>
+
+                    <div class="team-avatars" id="widget-barberos-fijos" style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: flex-start;"></div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+        <section class="booking-layout">
+
+            <div class="booking-sidebar">
+
+                <div class="interactive-search">
+
+                    <i class="fa-solid fa-magnifying-glass"></i>
+
+                    <input type="text" placeholder="¿Qué servicio buscas?" id="input-buscador">
+
+                </div>
+
+                <ul class="nav-categories" id="lista-categorias-filtro">
+
+                    <li class="active">Todos los Servicios</li>
+
+                </ul>
+
+            </div>
+
+            <div class="booking-main-panel">
+
+                <div id="paso-servicios">
+
+                    <h3 style="font-size:16px; margin-bottom:15px; color:var(--accent-gold);">1. SELECCIONA UN SERVICIO:</h3>
+
+                    <div id="contenedor-categorias"></div>
+
+                </div>
+
+                <div id="paso-barbero" class="hidden animate-step" style="margin-top: 30px;">
+
+                    <h3 style="font-size:16px; margin-bottom:15px; color:var(--accent-gold);">2. SELECCIONA TU PROFESIONAL:</h3>
+
+                    <div id="contenedor-barberos" style="display:flex; gap:15px; flex-wrap: wrap;"></div>
+
+                </div>
+
+                <div id="paso-horario" class="hidden animate-step" style="margin-top: 30px;">
+                    <div style="padding: 30px; border: 2px solid var(--accent-gold); border-radius: 15px; background: #1a1a1a; text-align: center;">
+                        <i class="fa-solid fa-calendar-xmark" style="font-size: 40px; color: var(--accent-gold); margin-bottom: 15px;"></i>
+                        <h3 style="color: var(--accent-gold); margin-bottom: 5px; font-size: 18px;">Agenda tu cita con <span id="barbero-nombre-msg"></span></h3>
+                        <p style="color: #ccc; margin-bottom: 20px; font-size: 14px; line-height: 1.6;">
+                            Escríbele directamente por <strong>WhatsApp</strong> o <strong>Instagram</strong> para coordinar tu hora.
+                        </p>
+                        <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                            <a id="barbero-wsp-link" href="#" target="_blank" rel="noopener noreferrer" style="background: #25d366; color: white; padding: 14px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; display: none; align-items: center; gap: 8px; font-size: 15px;">
+                                <i class="fa-brands fa-whatsapp"></i> WhatsApp
+                            </a>
+                            <a id="barbero-ig-link" href="#" target="_blank" rel="noopener noreferrer" style="background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); color: white; padding: 14px 30px; border-radius: 8px; text-decoration: none; font-weight: bold; display: none; align-items: center; gap: 8px; font-size: 15px;">
+                                <i class="fa-brands fa-instagram"></i> Instagram
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="paso-cliente" class="hidden animate-step" style="margin-top: 30px;">
+
+                    <h3 style="font-size:16px; margin-bottom:15px; color:var(--accent-gold);">4. COMPLETA TUS DATOS PARA RESERVAR:</h3>
+
+                    <div class="form-group" style="display: flex; flex-direction: column; gap: 12px; max-width: 400px;">
+
+                        <input type="text" id="cliente-nombre" class="input-glow" placeholder="Nombre completo" required style="padding: 12px;">
+
+                        <div class="phone-wrapper"><span class="phone-prefix">+56</span><input type="tel" id="cliente-telefono" class="input-glow" placeholder="9 digitos" maxlength="9" oninput="autoMas56(this)" required style="padding: 12px;"></div>
+
+                        <input type="email" id="cliente-correo" class="input-glow" placeholder="Correo electrónico" required style="padding: 12px;">
+
+                        <button id="btn-finalizar" class="btn-submit" style="margin-top: 15px;">Confirmar Cita 💈</button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </div>
+
+        <script>
+        const reservaActual = { servicio_id: null, servicio_nombre: null, barbero_id: null, fecha: null, hora: null };
+        let barberosData = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarEquipo();
+            cargarServicios();
+        });
+
+        async function cargarEquipo() {
+            try {
+                const res = await fetch('/api/barberos');
+                const barberos = await res.json();
+                barberosData = barberos;
+                const container = document.getElementById('widget-barberos-fijos');
+                if (!container) return;
+                container.style.display = 'flex';
+                container.style.flexDirection = 'column';
+                container.innerHTML = '';
+                const header = document.createElement('div');
+                header.style.cssText = "padding: 10px 15px; font-size: 12px; color: #aaa; border-bottom: 1px solid #333; margin-bottom: 5px;";
+                header.innerHTML = "Te invitamos a que conozcas a nuestro equipo y selecciones uno para ver su perfil y experiencia.";
+                container.appendChild(header);
+                barberos.forEach(b => {
+                    const nombreLimpio = b.nombre.toLowerCase().replace(/\s+/g, '');
+                    const rutaImagen = b.foto_url ? `/images/${b.foto_url}` : `/images/${nombreLimpio}.png`;
+                    const div = document.createElement('div');
+                    div.className = 'barber-row';
+                    div.style.cssText = "padding: 8px 15px; display: flex; align-items: center; cursor: pointer;";
+                    div.onclick = function() { toggleDetalle(this); };
+                    div.innerHTML = `
+                        <img src="${rutaImagen}" alt="${b.nombre}" onerror="this.src='/images/default-avatar.png'" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #F1C40F; flex-shrink: 0;">
+                        <div style="margin-left: 12px; display: flex; flex-direction: column; flex-grow: 1;">
+                            <span style="font-weight: bold; font-size: 14px; color: white;">${b.nombre}</span>
+                            <span style="font-size: 10px; color: #F1C40F; text-transform: uppercase;">Toca para ver perfil</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down" style="font-size: 10px; opacity: 0.5;"></i>
+                    `;
+                    const whatsappPhone = b.whatsapp ? b.whatsapp.replace(/\D/g, '') : '';
+                    const detalle = document.createElement('div');
+                    detalle.className = 'detalle-oculto';
+                    detalle.style.display = 'none';
+                    detalle.style.padding = '5px 15px 15px 55px';
+                    detalle.innerHTML = `
+                        <p style="font-size: 12px; color: #ddd; margin-bottom: 12px; line-height: 1.4;">${b.bio || 'Barbero profesional con pasion por el detalle y el estilo unico.'}</p>
+                        <div style="display: flex; gap: 15px;">
+                            ${b.instagram ? `<a href="${b.instagram}" target="_blank" rel="noopener noreferrer" style="color: #F1C40F; font-size: 12px; text-decoration: none;"><i class="fa-brands fa-instagram"></i> Instagram</a>` : ''}
+                            ${whatsappPhone ? `<a href="https://wa.me/${whatsappPhone}" target="_blank" rel="noopener noreferrer" style="color: #25d366; font-size: 12px; text-decoration: none;"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>` : ''}
+                        </div>
+                    `;
+                    container.appendChild(div);
+                    container.appendChild(detalle);
+                });
+            } catch (err) { console.error('Error cargando equipo:', err); }
+        }
+
+        function toggleDetalle(element) {
+            const detalleActual = element.nextElementSibling;
+            const estaAbierto = detalleActual.style.display === 'block';
+            document.querySelectorAll('.detalle-oculto').forEach(det => det.style.display = 'none');
+            if (!estaAbierto) detalleActual.style.display = 'block';
+        }
+
+        async function cargarServicios() {
+            try {
+                const res = await fetch('/api/servicios');
+                const servicios = await res.json();
+                const contenedor = document.getElementById('contenedor-categorias');
+                const menuLateral = document.getElementById('lista-categorias-filtro');
+                if (!contenedor || !menuLateral) return;
+                const categories = {};
+                servicios.forEach(s => {
+                    const catNombre = s.categoria || 'Otros';
+                    if (!categories[catNombre]) categories[catNombre] = [];
+                    categories[catNombre].push(s);
+                });
+                contenedor.innerHTML = '';
+                menuLateral.innerHTML = '<li class="active" onclick="filtrarPorMenu(\'Todas\', this)">Todos los Servicios</li>';
+                Object.keys(categories).forEach(cat => {
+                    menuLateral.innerHTML += `<li onclick="filtrarPorMenu('${cat}', this)">${cat}</li>`;
+                    const tarjetasHTML = categories[cat].map(s => {
+                        const precio = Number(s.precio).toLocaleString('es-CL');
+                        const duracion = s.duracion_minutos || '';
+                        const desc = s.descripcion || '';
+                        return '<div class="service-card" id="servicio-' + s.id + '" style="display:flex; justify-content:space-between; align-items:flex-start; padding:15px; border:1px solid var(--border-subtle); border-radius:8px; gap:20px;">' +
+                            '<div style="flex:1; min-width:0;">' +
+                                '<h4 style="margin:0 0 5px 0; font-size:15px;">' + s.nombre + '</h4>' +
+                                '<div class="service-meta" style="font-size:12px; color:#666;"><i class="fa-regular fa-clock"></i> ' + duracion + ' min</div>' +
+                                '<p class="service-desc" style="font-size:13px; margin:5px 0;">' + desc + '</p>' +
+                            '</div>' +
+                            '<div class="service-card-actions">' +
+                                '<div class="service-price" style="font-weight:bold; color:var(--accent-gold); margin-bottom:10px;">$' + precio + '</div>' +
+                                '<button class="btn-book" onclick="seleccionarServicio(' + s.id + ')" style="padding:10px 16px; background:black; color:white; border:none; border-radius:8px; cursor:pointer;">Agendar</button>' +
+                            '</div>' +
+                        '</div>';
+                    }).join('');
+                    const item = document.createElement('div');
+                    item.className = 'accordion-item';
+                    item.dataset.categoria = cat;
+                    item.innerHTML =
+                        '<button class="accordion-header">' +
+                            '<span>' + cat + '</span>' +
+                            '<span class="icon"><i class="fa-solid fa-plus"></i></span>' +
+                        '</button>' +
+                        '<div class="accordion-content">' +
+                            '<div class="services-grid" style="display:flex; flex-direction:column; gap:10px; padding:15px 0;">' +
+                                tarjetasHTML +
+                            '</div>' +
+                        '</div>';
+                    contenedor.appendChild(item);
+                });
+                document.querySelectorAll('.accordion-header').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const content = btn.nextElementSibling;
+                        btn.classList.toggle('active');
+                        if (content) content.style.maxHeight = btn.classList.contains('active') ? content.scrollHeight + 'px' : null;
+                        const icon = btn.querySelector('.icon i');
+                        if (icon) icon.className = btn.classList.contains('active') ? 'fa-solid fa-minus' : 'fa-solid fa-plus';
+                    });
+                });
+            } catch (err) { console.error('Error cargando servicios:', err); }
+        }
+
+        function filtrarPorMenu(categoriaSeleccionada, elementoClic) {
+            document.querySelectorAll('#lista-categorias-filtro li').forEach(li => li.classList.remove('active'));
+            if (elementoClic) elementoClic.classList.add('active');
+            document.querySelectorAll('.accordion-item').forEach(item => {
+                item.style.display = (categoriaSeleccionada === 'Todas' || item.dataset.categoria === categoriaSeleccionada) ? 'block' : 'none';
+            });
+        }
+
+        async function seleccionarServicio(id) {
+            reservaActual.servicio_id = id;
+            try {
+                const resServ = await fetch('/api/servicios');
+                const allServicios = await resServ.json();
+                const serv = allServicios.find(s => s.id === id);
+                if (serv) reservaActual.servicio_nombre = serv.nombre;
+            } catch(e) {}
+            document.querySelectorAll('.service-card').forEach(el => el.style.borderColor = 'var(--border-subtle)');
+            const servicioEl = document.getElementById('servicio-' + id);
+            if (servicioEl) servicioEl.style.borderColor = 'var(--accent-gold)';
+            const pasoBarbero = document.getElementById('paso-barbero');
+            if (pasoBarbero) pasoBarbero.classList.remove('hidden');
+            try {
+                const res = await fetch('/api/barberos');
+                const barberos = await res.json();
+                const contenedor = document.getElementById('contenedor-barberos');
+                if (!contenedor) return;
+                contenedor.innerHTML = barberos.map(b => {
+                    const defaultImage = 'https://cdn-icons-png.flaticon.com/512/147/147144.png';
+                    const nombreClave = (b.nombre || '').trim().split(' ')[0].toLowerCase();
+                    const imagenPorNombre = nombreClave ? `/images/${nombreClave}.png` : defaultImage;
+                    let foto = b.foto_url ? (b.foto_url.startsWith('http') ? b.foto_url : `/images/${b.foto_url}`) : imagenPorNombre;
+                    return '<div class="barber-card" id="barber-' + b.id + '" onclick="seleccionarBarbero(' + b.id + ')" style="min-width:130px; text-align:center; padding:15px; background:var(--bg-surface); border-radius:12px; border:1px solid var(--border-subtle); cursor:pointer;">' +
+                        '<img src="' + foto + '" onerror="this.src=\x27' + defaultImage + '\x27" alt="' + b.nombre + '" style="width:60px; height:60px; border-radius:50%; object-fit:cover; margin-bottom:8px;">' +
+                        '<h4 style="font-size:13px; color:var(--text-primary); font-weight:600; margin:0;">' + b.nombre + '</h4>' +
+                        '<span style="font-size:11px; color:var(--accent-gold); display:block; margin-top:4px;">Seleccionar</span>' +
+                    '</div>';
+                }).join('');
+                pasoBarbero?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } catch (err) { console.error('Error cargando barberos:', err); }
+        }
+
+        function seleccionarBarbero(id) {
+            reservaActual.barbero_id = id;
+            document.querySelectorAll('.barber-card').forEach(el => el.style.borderColor = 'var(--border-subtle)');
+            const card = document.getElementById('barber-' + id);
+            if (card) card.style.borderColor = 'var(--accent-gold)';
+            const barbero = barberosData.find(b => b.id === id);
+            const wspLink = document.getElementById('barbero-wsp-link');
+            const igLink = document.getElementById('barbero-ig-link');
+            const barberoNombre = document.getElementById('barbero-nombre-msg');
+            if (barbero) {
+                if (barberoNombre) barberoNombre.textContent = barbero.nombre;
+                if (wspLink && barbero.whatsapp) {
+                    const telefono = barbero.whatsapp.replace(/[^0-9]/g, '');
+                    const servicioMsg = reservaActual.servicio_nombre ? ' el servicio: ' + reservaActual.servicio_nombre : ' una cita';
+                    wspLink.href = 'https://wa.me/' + telefono + '?text=Hola,%20quiero%20agendar' + encodeURIComponent(servicioMsg) + '%20contigo%20' + encodeURIComponent(barbero.nombre);
+                    wspLink.style.display = 'inline-flex';
+                } else if (wspLink) { wspLink.style.display = 'none'; }
+                if (igLink && barbero.instagram) {
+                    igLink.href = barbero.instagram;
+                    igLink.style.display = 'inline-flex';
+                } else if (igLink) { igLink.style.display = 'none'; }
+            }
+            const pasoHorario = document.getElementById('paso-horario');
+            if (pasoHorario) {
+                pasoHorario.classList.remove('hidden');
+                pasoHorario.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+    </script>
+
+
+<footer class="site-footer">
+
+        <div class="footer-container">
+
+            <div class="footer-column">
+
+                <h3>The Salon Barber</h3>
+
+                <ul class="contact-info">
+
+                    <li><i class="fa-solid fa-location-dot"></i> Av. la Tirana 3432, Iquique</li>
+
+                    <li><i class="fa-solid fa-phone"></i> +56 9 2627 3092</li>
+
+                    <li><i class="fa-solid fa-envelope"></i> thesalonbarberagenda@gmail.com</li>
+
+                </ul>
+
+            </div>
+
+            <div class="footer-column">
+
+                <h3>Horarios</h3>
+
+                <ul class="hours-list">
+
+                    <li><span>Lun - Vie:</span> 10:30 - 22:00</li>
+
+                    <li><span>Sáb:</span> 10:30 - 22:00</li>
+
+                    <li><span>Dom:</span> 12:00 - 21:00 <span style="color:#F1C40F;font-weight:bold;">(Con reserva)</span></li>
+
+                </ul>
+
+            </div>
+
+            <div class="footer-column">
+
+                <h3>Legal</h3>
+
+                <ul>
+
+                    <li><a href="/terminos">Términos de Servicio</a></li>
+
+                    <li><a href="/privacidad">Política de Privacidad</a></li>
+
+                    <li><a href="/cancelacion">Políticas de Reserva y Cancelación</a></li>
+
+                </ul>
+
+            </div>
+
+            <div class="footer-column dev-section">
+
+                <h3>Desarrollado por</h3>
+
+                <p class="dev-brand"><strong>CloudSolutions</strong></p>
+
+                <p class="dev-desc">Soluciones web a medida</p>
+
+                <div class="social-links">
+
+                    <a href="https://cloudsolutions.cl" target="_blank" rel="noopener noreferrer" aria-label="CloudSolutions"><i class="fa-solid fa-globe"></i></a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="footer-bottom">
+
+            <p>&copy; 2026 The Salon Barber. Todos los derechos reservados.</p>
+
+        </div>
+
+    </footer>
+
+<style>
+
+</style>
+
+</body>
+
+</html>

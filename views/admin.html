@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración | The Salon Barber</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/png" href="/images/logobarber.png">
+
+    <style>
+        :root { 
+            --accent-gold: #eab308; 
+            --bg-surface: #1a1c22; 
+            --border-subtle: #2a2d35; 
+            --text-secondary: #9ca3af;
+        }
+        
+        body { 
+            background: #121316; 
+            color: white; 
+            font-family: 'Segoe UI', -apple-system, Roboto, sans-serif; 
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        
+        .admin-container { 
+            width: 100% !important;
+            max-width: 1300px; 
+            margin: 30px auto; 
+            padding: 0 24px; 
+            box-sizing: border-box;
+            flex: 1;
+        }
+        
+        .card { 
+            background: var(--bg-surface); 
+            padding: 25px; 
+            border-radius: 12px; 
+            border: 1px solid var(--border-subtle); 
+            margin-bottom: 20px; 
+            width: 100% !important;
+            box-sizing: border-box;
+        }
+        
+        .btn-volver { 
+            color: var(--accent-gold); 
+            text-decoration: none; 
+            font-size: 16px; 
+            margin-bottom: 20px; 
+            display: inline-block; 
+            font-weight: 700;
+        }
+        
+        #calendario-admin {
+            background: #0f1113 !important;
+            border-radius: 12px !important;
+            padding: 16px !important;
+            border: 1px solid var(--border-subtle) !important;
+            width: 100% !important;
+            box-sizing: border-box;
+            display: block !important;
+        }
+
+        .cal-header { 
+            display: flex !important; 
+            justify-content: space-between !important; 
+            align-items: center !important; 
+            gap: 10px; 
+            margin-bottom: 12px; 
+        }
+
+        .cal-header h3 { 
+            margin: 0; 
+            color: var(--accent-gold); 
+            font-weight: 700; 
+            text-transform: lowercase; 
+            text-align: center; 
+            width: 100%; 
+            font-size: 20px;
+        }
+
+        .cal-nav-btn { 
+            background: transparent; 
+            border: 1px solid var(--border-subtle); 
+            color: var(--text-secondary); 
+            padding: 10px 16px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-size: 15px;
+            transition: all 0.2s;
+        }
+        .cal-nav-btn:hover { 
+            border-color: var(--accent-gold); 
+            color: var(--accent-gold); 
+        }
+
+        #grid-admin-calendario { 
+            display: grid !important; 
+            grid-template-columns: repeat(7, 1fr) !important; 
+            gap: 8px !important; 
+            margin-top: 10px !important; 
+            width: 100% !important;
+            box-sizing: border-box;
+        }
+
+        #grid-admin-calendario .cal-weekday,
+        #grid-admin-calendario div[style*="font-weight:bold"] {
+            display: block !important;
+            font-weight: 700 !important;
+            text-align: center !important;
+            color: var(--text-secondary) !important;
+            font-size: 13px !important;
+            padding: 6px 0 !important;
+        }
+        
+        .dia-celda { 
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            text-align: center !important;
+            padding: 12px 8px !important;
+            min-height: 42px !important;
+            cursor: pointer !important;
+            border-radius: 8px !important;
+            border: 1px solid var(--border-subtle) !important;
+            font-size: 14px !important;
+            background: var(--bg-surface) !important;
+            box-sizing: border-box;
+            transition: all 0.18s ease;
+            color: #ffffff;
+        }
+
+        .dia-celda:hover:not(.disabled) { 
+            transform: translateY(-3px) !important;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.45) !important;
+            border-color: rgba(234,179,8,0.25) !important;
+            background: rgba(234,179,8,0.06) !important;
+        }
+
+        .dia-celda.disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            background: #111216 !important;
+            color: #8b5a5a !important;
+            border-style: dashed !important;
+        }
+
+        .bloqueo-item { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            padding: 16px; 
+            background: #1e2129; 
+            margin-bottom: 12px; 
+            border-radius: 10px; 
+            border: 1px solid var(--border-subtle);
+            border-left: 4px solid var(--accent-gold);
+            font-size: 15px;
+        }
+        .date-badge { font-weight: bold; color: var(--accent-gold); }
+
+        @media (max-width: 900px) {
+            .admin-container {
+                margin: 15px auto;
+                padding: 0 16px;
+            }
+            #grid-admin-calendario {
+                gap: 6px !important;
+            }
+            .dia-celda {
+                padding: 10px 4px !important;
+                min-height: 38px !important;
+                font-size: 13px !important;
+            }
+            .bloqueo-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <a href="/" class="btn-volver"><i class="fa-solid fa-arrow-left"></i> Volver al sitio</a>
+        
+        <div class="card">
+            <h2 id="titulo-admin-autenticado" style="margin-top:0; color:var(--accent-gold); text-align:center; font-size: 26px;">Gestión de Ausencias 💈</h2>
+            
+            <div style="background: #111; padding: 16px; border-radius: 8px; border: 1px solid #2d2d2d; margin-bottom: 18px; text-align: center;">
+                <p id="subtitulo-perfil" style="margin:0; font-size: 16px; color: #cbd5e1;">Identificando perfil profesional...</p>
+                <div id="control-gestiones" style="margin-top: 16px;
+                    display: flex;
+                    flex-wrap: wrap;
+                    justify-content: center;
+                    gap: 10px;
+                    align-items: center;
+                    font-size: 13px;
+                    color: #cbd5e1;
+                "></div>
+            </div>
+            
+            <p style="font-size:15px; color:#cbd5e1; margin-top:10px; text-align: center;">
+                Selecciona un día en el calendario de abajo para bloquear o liberar tus ausencias.
+            </p>
+            <div id="mensaje-admin" style="margin-top:15px; text-align:center; font-size: 14px;"></div>
+        </div>
+
+        <div class="bloqueos-lista">
+            <h3 style="font-size:15px; margin-bottom:15px;"><i class="fa-solid fa-calendar-days"></i> Calendario Programado</h3>
+            <div id="lista-bloqueos">Cargando...</div>
+        </div>
+
+        <div id="calendario-admin" class="cal-container">
+            <div class="cal-header">
+                <button id="admin-prev-mes" class="cal-nav-btn">◀</button>
+                <h3 id="admin-mes-titulo"></h3>
+                <button id="admin-next-mes" class="cal-nav-btn">▶</button>
+            </div>
+            <div id="grid-admin-calendario" class="cal-grid"></div>
+        </div>
+    </div>
+
+    <script>
+        function getToken() {
+        try {
+            // token read from localStorage
+            return localStorage.getItem('token') || '' || '';
+        } catch(e) { return ''; }
+    }
+
+    function getAuthHeaders() {
+        const t = getToken();
+        const headers = { 'Content-Type': 'application/json' };
+        if (t) headers['Authorization'] = 'Bearer ' + t;
+        return headers;
+    }
+
+    const adminState = {
+            selectedBarberoId: null,
+            selectedBarberoNombre: null,
+            bloqueos: [],
+            calendarioMes: new Date()
+        };
+
+        const horasPosibles = [
+            "10:30", "11:30", "12:30", "13:30", "14:30", 
+            "15:30", "16:30", "17:30", "18:30", "19:30", "20:30", "21:30"
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('admin-prev-mes').addEventListener('click', () => cambiarMesAdmin(-1));
+            document.getElementById('admin-next-mes').addEventListener('click', () => cambiarMesAdmin(1));
+            verificarYVerificarSesionAdmin();
+        });
+
+        // AUTENTICACIÓN MEJORADA: Vinculación directa y exacta mediante barbero_id
+        async function verificarYVerificarSesionAdmin() {
+            const usuarioStr = localStorage.getItem('usuario');
+            if (!usuarioStr) {
+                alert("Sesión expirada. Por favor vuelve a iniciar sesión.");
+                window.location.href = '/';
+                return;
+            }
+
+            const usuario = JSON.parse(usuarioStr);
+            const rolUsuario = String(usuario.rol || usuario.role || '').toLowerCase();
+            
+            if (rolUsuario !== 'barbero') {
+                alert("Acceso denegado. Área reservada para personal.");
+                window.location.href = '/';
+                return;
+            }
+
+            try {
+                // Consultamos los barberos directo a la API de Node
+                const res = await fetch('/api/barberos');
+                const barberos = await res.json();
+
+                // Extraemos el barbero_id del usuario logueado
+                const usuarioBarberoId = usuario.barbero_id || usuario.barberoId;
+                
+                // Buscamos coincidencia exacta por ID en la base de datos
+                let barberoEncontrado = barberos.find(b => String(b.id) === String(usuarioBarberoId));
+
+                if (barberoEncontrado) {
+                    adminState.selectedBarberoId = barberoEncontrado.id;
+                    adminState.selectedBarberoNombre = barberoEncontrado.nombre;
+
+                    // Pintamos los datos nativos de la base de datos sin errores de string
+                    document.getElementById('titulo-admin-autenticado').innerHTML = `Ausencias de <span style="color:white;">${barberoEncontrado.nombre}</span> 💈`;
+                    document.getElementById('subtitulo-perfil').innerHTML = `Conectado como: <b>${usuario.email || 'Sin correo registrado'}</b>`;
+                    
+                    renderControlHorario(barberoEncontrado);
+                    cargarListaBloqueos();
+                    cargarBloqueosPorBarbero();
+                } else {
+                    console.warn('Barbero no encontrado con el ID especificado', { usuario });
+                    document.getElementById('subtitulo-perfil').innerHTML = `<span style="color:#ef4444;">Error: Tu cuenta no está enlazada a ningún perfil de barbero activo.</span>`;
+                }
+            } catch (err) {
+                console.error("Error cargando sesión administrativa:", err);
+            }
+        }
+
+        async function cargarListaBloqueos() {
+            try {
+                const res = await fetch('/api/lista-bloqueos');
+                const bloqueos = await res.json();
+                const contenedor = document.getElementById('lista-bloqueos');
+                
+                const selectedName = adminState.selectedBarberoNombre?.toLowerCase();
+                const susBloqueos = bloqueos.filter(b => {
+                    const nombreBloqueo = String(b.barbero_nombre || '').toLowerCase();
+                    return nombreBloqueo === selectedName;
+                });
+
+                if (!susBloqueos || susBloqueos.length === 0) {
+                    contenedor.innerHTML = '<p style="color:#555; text-align:center;">No registras días bloqueados actualmente</p>';
+                    return;
+                }
+
+                contenedor.innerHTML = susBloqueos.map(l => {
+                    const soloFecha = l.fecha.split('T')[0]; 
+                    const fechaObj = new Date(soloFecha + 'T12:00:00'); 
+                    const fechaFormateada = fechaObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+                    
+                    const textoFecha = l.tipo === 'parcial' ? `${fechaFormateada}<br><span style="color:#aaa; font-size:11px;">(${l.hora_inicio} a ${l.hora_fin})</span>` : fechaFormateada;
+                    const etiquetaTipo = l.tipo === 'parcial' ? '<span style="color:#eab308; font-size:10px; margin-left:5px; padding:2px 6px; background:rgba(234,179,8,0.2); border-radius:4px;">PARCIAL</span>' : '';
+
+                    return `
+                        <div class="bloqueo-item" style="align-items: flex-start;">
+                            <div style="flex:1;">
+                                <span style="display:block; font-weight:bold; margin-bottom:5px; color: white;">
+                                    <i class="fa-solid fa-user-scissors"></i> Mi Cuenta ${etiquetaTipo}
+                                </span>
+                                <span style="font-size: 12px; color: #aaa;">
+                                    <i class="fa-solid fa-circle-info" style="color:var(--accent-gold);"></i> ${l.motivo || 'Día libre'}
+                                </span>
+                            </div>
+                            <span class="date-badge" style="text-align:right;">${textoFecha}</span>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error('Error cargando bloqueos:', err);
+            }
+        }
+
+        async function cargarBloqueosPorBarbero() {
+            if (!adminState.selectedBarberoId) return;
+            try {
+                const res = await fetch(`/api/fechas-bloqueadas/${adminState.selectedBarberoId}?admin=true`);
+                const fechas = await res.json();
+                adminState.bloqueos = Array.isArray(fechas) ? fechas : [];
+                renderCalendarioAdmin();
+            } catch (err) {
+                console.error('Error cargando bloqueos por barbero:', err);
+            }
+        }
+
+        async function procesarClicDiaAdmin(fechaStr) {
+            const barbero_id = adminState.selectedBarberoId;
+            const mensaje = document.getElementById('mensaje-admin');
+            mensaje.innerText = '';
+            if (!fechaStr || !barbero_id) return;
+
+            const estaBloqueado = adminState.bloqueos.includes(fechaStr);
+
+            if (estaBloqueado) {
+                const confirmar = confirm(`¿Estás seguro de que deseas ELIMINAR tu ausencia del día ${fechaStr}?`);
+                if (!confirmar) return;
+
+                try {
+                    const res = await fetch('/api/bloquear-dia', {
+                        method: 'DELETE',
+                        headers: getAuthHeaders(),
+                        body: JSON.stringify({ barbero_id, fecha: fechaStr })
+                    });
+                    
+                    if (res.ok) {
+                        mensaje.style.color = '#a3e635';
+                        mensaje.innerText = '✅ Tu día ha sido habilitado nuevamente: ' + fechaStr;
+                        actualizarTablas();
+                    } else {
+                        mensaje.style.color = '#ef4444';
+                        mensaje.innerText = 'No se pudo eliminar el bloqueo.';
+                    }
+                } catch (err) {
+                    console.error('Error:', err);
+                }
+
+            } else {
+                const confirmar = confirm(`¿Deseas registrar una ausencia para el día ${fechaStr}?`);
+                if (!confirmar) return;
+
+                const esDiaCompleto = confirm(`¿La ausencia será por TODO EL DÍA?\n\n[Aceptar] = Día Completo\n[Cancelar] = Elegir rango de Horas`);
+
+                let tipo = 'completo';
+                let hora_inicio = null;
+                let hora_fin = null;
+
+                if (!esDiaCompleto) {
+                    tipo = 'parcial';
+                    const textoListaHoras = horasPosibles.join(" | ");
+
+                    let inputInicio = prompt(`HORA DE INICIO:\n\n${textoListaHoras}\n\n`, "14:30");
+                    if (!inputInicio) return;
+                    hora_inicio = inputInicio.trim();
+
+                    if (!horasPosibles.includes(hora_inicio)) {
+                        alert(`❌ HORA INVÁLIDA.`);
+                        return;
+                    }
+                    
+                    let inputFin = prompt(`HORA DE FIN:\n\n${textoListaHoras}\n\n`, "16:30");
+                    if (!inputFin) return;
+                    hora_fin = inputFin.trim();
+
+                    if (!horasPosibles.includes(hora_fin)) {
+                        alert(`❌ HORA INVÁLIDA.`);
+                        return;
+                    }
+                }
+
+                let motivo = prompt("Ingresa el motivo de tu ausencia:", tipo === 'completo' ? "Día libre" : "Trámite");
+                if (motivo === null) return; 
+
+                try {
+                    const res = await fetch('/api/bloquear-dia', {
+                        method: 'POST',
+                        headers: getAuthHeaders(),
+                        body: JSON.stringify({ barbero_id, fecha: fechaStr, motivo, tipo, hora_inicio, hora_fin })
+                    });
+                    
+                    if (res.ok) {
+                        mensaje.style.color = '#a3e635';
+                        mensaje.innerText = '✅ Bloqueo guardado con éxito: ' + fechaStr;
+                        actualizarTablas();
+                    } else {
+                        mensaje.style.color = '#ef4444';
+                        mensaje.innerText = 'No se pudo guardar.';
+                    }
+                } catch (err) {
+                    console.error('Error:', err);
+                }
+            }
+        }
+
+        function actualizarTablas() {
+            cargarListaBloqueos();
+            cargarBloqueosPorBarbero();
+        }
+
+        function renderControlHorario(barbero) {
+            const panel = document.getElementById('control-gestiones');
+            if (!panel) return;
+
+            const estadoActual = Number(barbero.estado_horario || 0);
+            const etiqueta = estadoActual === 0 ? 'Bloqueo Hoy' : estadoActual === 1 ? 'Horario Parcial 16:30-21:30' : 'Tiempo completo';
+
+            panel.innerHTML = `
+                <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:10px; width:100%;">
+                    <button onclick="cambiarEstadoHorario(${barbero.id}, 0)" style="padding:10px 14px; border-radius:8px; background:#111; border:1px solid #2d2d2d; color:white; cursor:pointer;">Bloquear Hoy</button>
+                    <button onclick="cambiarEstadoHorario(${barbero.id}, 1)" style="padding:10px 14px; border-radius:8px; background:#111; border:1px solid #2d2d2d; color:white; cursor:pointer;">Horario Parcial (16:30-21:30)</button>
+                    <button onclick="cambiarEstadoHorario(${barbero.id}, 2)" style="padding:10px 14px; border-radius:8px; background:#111; border:1px solid #2d2d2d; color:white; cursor:pointer;">Tiempo Completo</button>
+                </div>
+                <div style="width:100%; margin-top: 10px; color:#9ca3af; font-size:13px;">Estado actual: <strong style="color:#f8f32b;">${etiqueta}</strong></div>
+            `;
+        }
+
+        async function cambiarEstadoHorario(id, estado) {
+            const mensaje = document.getElementById('mensaje-admin');
+            mensaje.style.color = '#cbd5e1';
+            mensaje.innerText = 'Actualizando horario...';
+
+            try {
+                const res = await fetch(`/api/barberos/horario/${id}`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ estado })
+                });
+
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.error || 'Error al actualizar horario');
+                }
+
+                mensaje.style.color = '#a3e635';
+                mensaje.innerText = '✅ Horario actualizado correctamente.';
+                const barberoRes = await fetch(`/api/barbero/${id}`);
+                const barbero = await barberoRes.json();
+                renderControlHorario(barbero);
+                actualizarTablas();
+            } catch (err) {
+                console.error(err);
+                mensaje.style.color = '#ef4444';
+                mensaje.innerText = err.message || 'No se pudo actualizar horario.';
+            }
+        }
+
+        function renderCalendarioAdmin() {
+            const grid = document.getElementById('grid-admin-calendario');
+            const titulo = document.getElementById('admin-mes-titulo');
+            if (!grid || !titulo) return;
+
+            const mes = adminState.calendarioMes.getMonth();
+            const anio = adminState.calendarioMes.getFullYear();
+            titulo.innerText = adminState.calendarioMes.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+            
+            const diasSemana = ['Lu','Ma','Mi','Ju','Vi','Sa','Do'];
+            const primerDia = new Date(anio, mes, 1).getDay() || 7;
+            const diasEnMes = new Date(anio, mes + 1, 0).getDate();
+            
+            let html = '';
+            diasSemana.forEach(d => html += `<div style="font-weight:bold; color:var(--text-secondary); text-align:center; padding-bottom:10px;">${d}</div>`);
+            
+            for (let i = 1; i < primerDia; i++) html += '<div></div>';
+            
+            for (let i = 1; i <= diasEnMes; i++) {
+                const fechaStr = `${anio}-${String(mes + 1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+                const bloqueado = adminState.bloqueos.includes(fechaStr);
+                
+                const estiloFondo = bloqueado ? 'background: #111; color: #666; border: 1px solid #333;' : 'background: #252525; border: 1px solid #444;';
+                
+                html += `
+                    <div class="dia-celda" 
+                         style="padding: 15px 0; text-align: center; border-radius: 8px; cursor: pointer; ${estiloFondo}" 
+                         title="${bloqueado ? 'Clic para Desbloquear' : 'Clic para Bloquear'}" 
+                         onclick="procesarClicDiaAdmin('${fechaStr}')">
+                        ${i}
+                    </div>
+                `;
+            }
+            grid.innerHTML = html;
+        }
+
+        function cambiarMesAdmin(dir) {
+            adminState.calendarioMes.setMonth(adminState.calendarioMes.getMonth() + dir);
+            renderCalendarioAdmin();
+        }
+    </script>
+</body>
+</html>
